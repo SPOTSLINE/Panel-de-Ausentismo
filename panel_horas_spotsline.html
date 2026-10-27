@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<script src="/Paneldepaneles/candado.js" data-panel="ausentismo"></script>
 <meta charset="UTF-8">
 <title>Panel de Horas — SPOTSLINE SRL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -4238,7 +4239,7 @@ function filtrarRosterPorAlcance(list){ return alcanceActivo() ? list.filter(r=>
 function aplicarPermisosUI(){
   document.querySelectorAll('.tab-btn').forEach(b=>{
     const id = b.dataset.tab;
-    const visible = (id==='usuarios' || id==='registro') ? ACCESO.esAdmin : puedeVerTab(id);
+    const visible = id==='usuarios' ? false /* usuarios: en el Panel de Paneles */ : id==='registro' ? ACCESO.esAdmin : puedeVerTab(id);
     b.hidden = !visible;
   });
   const ocultar = (id, cond)=>{ const el = document.getElementById(id); if(el && cond) el.style.display='none'; };
@@ -4254,7 +4255,7 @@ function aplicarPermisosUI(){
   if(chip){
     chip.innerHTML = `<button class="btn secondary small" id="btnMejoras">💡 Mejoras</button> <span class="user-chip-name">👤 ${escHtml(ACCESO.usuario.nombre)}</span> <span class="tag">${ACCESO.esAdmin?'Administrador':'Usuario'}</span> <button class="btn secondary small" id="btnSalir">Salir</button>`;
     document.getElementById('btnMejoras').onclick = ()=>abrirMejoras();
-    document.getElementById('btnSalir').onclick = ()=>{ lsDel(LS_TOKEN); location.href = location.pathname; };
+    document.getElementById('btnSalir').onclick = ()=>{ lsDel(LS_TOKEN); window.PORTAL.salir(); };
   }
 }
 function activarPrimeraTabPermitida(){
@@ -4269,17 +4270,13 @@ let _panelIniciado = false;
 async function boot(){
   document.body.classList.add('auth-pending');
   pantallaAcceso('verificando');
-  const r = await leerFilaEstricta(USUARIOS_ROW_ID);
-  if(!r.ok){ pantallaAcceso('error'); return; }
-  const data = r.valor;
-  if(!data || !Array.isArray(data.usuarios) || !data.usuarios.length){ pantallaAcceso('bootstrap'); return; }
-  const tokenUrl = new URLSearchParams(location.search).get('u');
-  const token = tokenUrl || lsGet(LS_TOKEN);
-  const u = token ? data.usuarios.find(x=>x.token===token) : null;
-  if(!u){ lsDel(LS_TOKEN); pantallaAcceso(token ? 'invalido' : 'pedir'); return; }
-  if(!u.activo){ pantallaAcceso('desactivado'); return; }
-  if(tokenUrl){ lsSet(LS_TOKEN, tokenUrl); try{ history.replaceState(null,'',location.pathname); }catch(e){} }
-  aplicarUsuario(u, data);
+  // Login único (Panel de Paneles): el usuario y sus permisos vienen del portal, sin link ni token propio.
+  const a = await window.PORTAL_ACCESO;
+  const cfg = (a && a.config) || {};
+  const esAdmin = !!(a && a.es_admin) || cfg.admin === true;
+  const u = { id: a.user_id || 'portal', nombre: a.nombre || a.email || 'Usuario', rol: esAdmin ? 'admin' : 'usuario', activo: true,
+              permisos: { tabs: cfg.tabs || [], empresas: cfg.empresas || [], sectores: cfg.sectores || [], acciones: cfg.acciones || {} } };
+  aplicarUsuario(u, { version: 1, baseUrl: '', usuarios: [] });
   await cargarPersonal();
   document.getElementById('accesoOverlay').style.display = 'none';
   document.body.classList.remove('auth-pending');
