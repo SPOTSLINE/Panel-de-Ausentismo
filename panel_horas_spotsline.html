@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<script src="/Paneldepaneles/candado.js" data-panel="ausentismo"></script>
 <meta charset="UTF-8">
 <title>Panel de Horas — SPOTSLINE SRL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -609,6 +608,13 @@
   .vac-sol-linea{display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:2px 0;}
   .vac-sol-linea.cancelada{opacity:.5; text-decoration:line-through;}
   .vac-nom-link{cursor:pointer;} .vac-nom-link:hover{text-decoration:underline;}
+  .vac-sal{font-family:var(--mono); white-space:nowrap;}
+  .vac-sal b{font-size:14px;}
+  .vac-sal .det{display:block; font-size:10.5px; color:var(--muted);}
+  .vac-sal.arr b{color:var(--amber);} .vac-sal.cero b{color:var(--good);} .vac-sal.neg b{color:var(--danger);}
+  .vac-sal .lnk{font-size:10.5px; color:var(--muted); cursor:pointer; text-decoration:underline dotted; margin-right:6px;}
+  .vac-sal .lnk:hover{color:var(--amber);}
+  #tab-vacaciones th.ciclo-act, #tab-vacaciones td.ciclo-act{background:rgba(91,155,213,.07);}
 
   /* ====== Polivalencia ====== */
   .pol-subtabs{display:flex; gap:2px; background:var(--panel-2); border:1px solid var(--line); border-radius:7px; padding:3px; width:fit-content; margin-bottom:14px;}
@@ -1072,12 +1078,14 @@
         <img id="vacLogo" alt="Spotsline" style="height:52px; padding-right:12px; border-right:3px solid var(--brand-yellow);">
         <div>
         <h2>Planificador de vacaciones</h2>
-        <div class="note">Período 01/10/2026 → 30/04/2027 · carga y seguimiento por RRHH. Las vacaciones empiezan un lunes hábil y las autoriza el jefe.</div>
+        <div class="note" id="vacPeriodoNota">Ciclo 2026/27 · Período 01/10/2026 → 30/04/2027 · carga y seguimiento por RRHH. Las vacaciones empiezan un lunes hábil y las autoriza el jefe.</div>
         </div>
       </div>
       <div class="actions">
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);">Ciclo
+          <select id="vacCiclo" style="width:auto; min-width:120px;" title="Ciclo vacacional (octubre a abril del año siguiente)"></select></label>
         <span id="vacImportStatus" style="font-size:11px; color:var(--muted); font-family:var(--mono);"></span>
-        <button class="btn secondary" id="vacBtnImportar">⭱ Importar pendientes (Excel)</button>
+        <button class="btn secondary" id="vacBtnImportar" title="Excel con hojas 'Mensuales - Pendientes' y 'Jornalizados - Pendientes': saldo de cierre del ciclo 2025/26">⭱ Importar pendientes 2025/26 (Excel)</button>
         <input type="file" id="vacExcelFile" accept=".xlsx" style="display:none">
         <button class="btn secondary" id="vacBtnExportar">Exportar a Excel</button>
       </div>
@@ -1100,6 +1108,36 @@
       <button class="vtab-btn active" id="vsub-btn-cargar" data-vtab="cargar">Cargar solicitud</button>
       <button class="vtab-btn" data-vtab="solicitudes">Solicitudes</button>
       <button class="vtab-btn" data-vtab="calendario">Calendario</button>
+      <button class="vtab-btn" data-vtab="saldos">Saldos por ciclo</button>
+    </div>
+
+    <div id="vtab-saldos" class="vtabpanel">
+      <div class="toolbar">
+        <input type="text" id="vacSalBuscar" class="search" placeholder="Buscar por nombre o sector...">
+        <select id="vacSalFiltro" style="max-width:280px;">
+          <option value="">Todo el personal</option>
+          <option value="anterior">Con pendiente de ciclos anteriores</option>
+          <option value="libre">Pendiente anterior todavía sin asignar</option>
+          <option value="negativo">Con saldo negativo</option>
+          <option value="manual">Con días corregidos a mano</option>
+        </select>
+        <span class="note" id="vacSalInfo"></span>
+      </div>
+      <details class="feriados-box" style="margin:0 0 12px;">
+        <summary>¿Cómo se calcula el saldo? (click para ver)</summary>
+        <div class="note" style="margin:8px 0 0; line-height:1.55;">
+          • <b>Ciclo vacacional</b>: del 1° de octubre al 30 de abril del año siguiente (ej. 2026/27 = 01/10/2026 → 30/04/2027). Cada solicitud pertenece al ciclo de su fecha "desde" (si cae entre mayo y septiembre se imputa al ciclo que terminó en abril y queda con observación).<br>
+          • <b>2025/26 (ciclo base)</b>: sale del Excel de pendientes importado (Corresponde, Tomados y Pendiente de cada persona). Si alguien no está en ese Excel se toma lo que le corresponde por antigüedad, marcado "sin historial".<br>
+          • <b>Ciclos siguientes</b>: lo que corresponde por antigüedad al 31/12 del año en que empieza el ciclo (LCT art. 150: hasta 5 años 14 días, hasta 10 años 21, hasta 20 años 28, más de 20 años 35; con menos de 6 meses, 1 día cada 20 trabajados, aprox.). Se puede corregir a mano por persona ("editar").<br>
+          • <b>Pendiente anterior (arrastre)</b>: lo que quedó sin usar de los ciclos anteriores. <b>No se pierde solo</b>: sigue figurando hasta que se use con solicitudes o un administrador lo dé de baja ("dar de baja", con motivo; queda en el registro y se puede deshacer).<br>
+          • <b>Orden de uso</b>: cada solicitud descuenta primero los días del ciclo más viejo con saldo y después los del ciclo actual. Disponible del ciclo = pendiente anterior + corresponde del ciclo. Restante = disponible − asignado.<br>
+          • Las solicitudes canceladas no descuentan.
+        </div>
+      </details>
+      <div id="vacSalWrap"></div>
+      <h3 style="font-size:13.5px; margin:20px 0 6px;">Bajas de pendientes</h3>
+      <div class="note">Días dados de baja a mano (vencidos, liquidados, error de carga, etc.).</div>
+      <div id="vacAjustesWrap"></div>
     </div>
 
     <div id="vtab-cargar" class="vtabpanel active">
@@ -1163,7 +1201,9 @@
           <option value="ok">Autorizadas</option>
           <option value="sincargar">Sin cargar todavía</option>
           <option value="concarga">Con solicitud cargada</option>
-          <option value="excedidos">Más días asignados que pendientes</option>
+          <option value="excedidos">Más días asignados que disponibles</option>
+          <option value="arrastre">Con pendiente de ciclos anteriores</option>
+          <option value="arrastreLibre">Pendiente anterior sin asignar todavía</option>
           <option value="canceladas">Con solicitudes canceladas</option>
         </select>
         <span id="vacSelAcciones" style="display:none; gap:6px; align-items:center;">
@@ -4198,7 +4238,7 @@ function filtrarRosterPorAlcance(list){ return alcanceActivo() ? list.filter(r=>
 function aplicarPermisosUI(){
   document.querySelectorAll('.tab-btn').forEach(b=>{
     const id = b.dataset.tab;
-    const visible = id==='usuarios' ? false /* usuarios: en el Panel de Paneles */ : id==='registro' ? ACCESO.esAdmin : puedeVerTab(id);
+    const visible = (id==='usuarios' || id==='registro') ? ACCESO.esAdmin : puedeVerTab(id);
     b.hidden = !visible;
   });
   const ocultar = (id, cond)=>{ const el = document.getElementById(id); if(el && cond) el.style.display='none'; };
@@ -4214,7 +4254,7 @@ function aplicarPermisosUI(){
   if(chip){
     chip.innerHTML = `<button class="btn secondary small" id="btnMejoras">💡 Mejoras</button> <span class="user-chip-name">👤 ${escHtml(ACCESO.usuario.nombre)}</span> <span class="tag">${ACCESO.esAdmin?'Administrador':'Usuario'}</span> <button class="btn secondary small" id="btnSalir">Salir</button>`;
     document.getElementById('btnMejoras').onclick = ()=>abrirMejoras();
-    document.getElementById('btnSalir').onclick = ()=>{ lsDel(LS_TOKEN); window.PORTAL.salir(); };
+    document.getElementById('btnSalir').onclick = ()=>{ lsDel(LS_TOKEN); location.href = location.pathname; };
   }
 }
 function activarPrimeraTabPermitida(){
@@ -4229,13 +4269,17 @@ let _panelIniciado = false;
 async function boot(){
   document.body.classList.add('auth-pending');
   pantallaAcceso('verificando');
-  // Login único (Panel de Paneles): el usuario y sus permisos vienen del portal, sin link ni token propio.
-  const a = await window.PORTAL_ACCESO;
-  const cfg = (a && a.config) || {};
-  const esAdmin = !!(a && a.es_admin) || cfg.admin === true;
-  const u = { id: a.user_id || 'portal', nombre: a.nombre || a.email || 'Usuario', rol: esAdmin ? 'admin' : 'usuario', activo: true,
-              permisos: { tabs: cfg.tabs || [], empresas: cfg.empresas || [], sectores: cfg.sectores || [], acciones: cfg.acciones || {} } };
-  aplicarUsuario(u, { version: 1, baseUrl: '', usuarios: [] });
+  const r = await leerFilaEstricta(USUARIOS_ROW_ID);
+  if(!r.ok){ pantallaAcceso('error'); return; }
+  const data = r.valor;
+  if(!data || !Array.isArray(data.usuarios) || !data.usuarios.length){ pantallaAcceso('bootstrap'); return; }
+  const tokenUrl = new URLSearchParams(location.search).get('u');
+  const token = tokenUrl || lsGet(LS_TOKEN);
+  const u = token ? data.usuarios.find(x=>x.token===token) : null;
+  if(!u){ lsDel(LS_TOKEN); pantallaAcceso(token ? 'invalido' : 'pedir'); return; }
+  if(!u.activo){ pantallaAcceso('desactivado'); return; }
+  if(tokenUrl){ lsSet(LS_TOKEN, tokenUrl); try{ history.replaceState(null,'',location.pathname); }catch(e){} }
+  aplicarUsuario(u, data);
   await cargarPersonal();
   document.getElementById('accesoOverlay').style.display = 'none';
   document.body.classList.remove('auth-pending');
@@ -5046,8 +5090,8 @@ async function abrirFicha(id){
       return `<div class="ficha-camp"><b>🦺 ${escHtml(c.nombre)}</b> <span class="ropa-est ${r.entregas?'entregado':'pendiente'}">${r.entregas} entrega(s) · ${r.unidades} u.</span> <button class="btn secondary small" onclick="abrirHistorialEPP('${p.id}','${c.id}')">Ver historial</button>${lst.length?`<ul>${lst.slice(0,8).map(l=>`<li>${fmtCorta(l.fecha)} — ${escHtml(l.producto)}${l.talle?' · T '+escHtml(l.talle):''} × ${l.cantidad||1}${l.marca?' · '+escHtml(l.marca):''}</li>`).join('')}${lst.length>8?`<li class="ropa-peq">… y ${lst.length-8} más</li>`:''}</ul>`:''}</div>`; }
     return `<div class="ficha-camp"><b>${escHtml(c.nombre)}</b> ${e.estado!=='sin'?`<span class="ropa-est ${e.estado}">${ETQ[e.estado]}</span>`:''}${cuerpo}</div>`;
   }).join('') || '<div class="ficha-vacio">Todavía no hay campañas de entrega.</div>';
-  const vacHtml = `<div>Días pendientes: <b>${p.vac ? p.vac.pend : (p.diasVac||0)}</b>${p.vac && p.vac.sinHist ? ' <span class="ropa-peq">(sin historial verificado)</span>':''}</div>` +
-    (solics.length ? `<ul>${solics.map(s=>`<li ${s.cancelada?'style="opacity:.55"':''}>${s.cancelada?'<s>':''}${fmtCorta(s.desde)} al ${fmtCorta(s.hasta)} (${s.dias} días)${s.cancelada?'</s> · cancelada':(s.autorizo?` · autorizó ${escHtml(s.autorizo.nombre)}`:('autorizo' in s?' · falta autorizar':''))}${s.alertaFecha?' ⚠ no inicia en lunes hábil':''}${s.obs?' — '+escHtml(s.obs):''}</li>`).join('')}</ul>` : '<div class="ficha-vacio">Sin vacaciones cargadas para el período 2026/27.</div>');
+  const vacHtml = Vac.resumenFicha(p, rv.ok ? rv.valor : null) +
+    (solics.length ? `<ul>${solics.map(s=>`<li ${s.cancelada?'style="opacity:.55"':''}>${s.cancelada?'<s>':''}${fmtCorta(s.desde)} al ${fmtCorta(s.hasta)} (${s.dias} días)${s.cancelada?'</s> · cancelada':(s.autorizo?` · autorizó ${escHtml(s.autorizo.nombre)}`:('autorizo' in s?' · falta autorizar':''))}${s.alertaFecha?' ⚠ no inicia en lunes hábil':''}${s.obs?' — '+escHtml(s.obs):''}</li>`).join('')}</ul>` : '<div class="ficha-vacio">Sin solicitudes de vacaciones cargadas en el panel.</div>');
 
   $('fichaCuerpo').innerHTML = `
     ${p.baja ? `<div class="usr-aviso">⚠ Dado de baja: ${escHtml(textoBaja(p))}</div>` : ''}
@@ -5067,14 +5111,25 @@ async function abrirFicha(id){
     ${p.mod && p.mod.por ? `<div class="ficha-pie">Última modificación: ${escHtml(p.mod.por)}, ${new Date(p.mod.fecha).toLocaleDateString('es-AR')}</div>` : ''}`;
 }
 
-// ====== VACACIONES: planificador 2026/27 integrado al panel ======
+// ====== VACACIONES: planificador por ciclos (oct → abr) integrado al panel ======
+// Ciclo Y = 01/10/Y → 30/04/Y+1. Ciclo base 2025/26 = saldo importado del Excel de pendientes (p.vac).
+// El pendiente de ciclos anteriores se arrastra hasta que se usa (solicitudes, FIFO) o se da de baja (ajustes).
 const Vac = (function(){
-  const PERIOD_START = new Date(2026,9,1);   // 1 oct 2026
-  const PERIOD_END   = new Date(2027,3,30);  // 30 abr 2027
+  const CICLO_BASE = 2025;
+  const cicloDe = iso => { const [y,m] = String(iso).split('-').map(Number); return m>=10 ? y : y-1; };
+  const cicloHoy = () => { const t = new Date(), m = t.getMonth()+1, y = t.getFullYear(); return m>=10 ? y : (m<=4 ? y-1 : y); };
+  const cicloLbl = y => `${y}/${String(y+1).slice(2)}`;
+  let CICLO = Math.max(CICLO_BASE, cicloHoy());
+  let PERIOD_START = new Date(CICLO,9,1), PERIOD_END = new Date(CICLO+1,3,30);
+  function setCiclo(y){ CICLO = y; PERIOD_START = new Date(y,9,1); PERIOD_END = new Date(y+1,3,30); invalidar(); }
   const ROW_ID = 'vacaciones_v1';
   const DEFAULT_FERIADOS = ['2026-12-08','2026-12-25','2027-01-01','2027-03-24','2027-04-02'];
   let solicitudes = [];   // solo las vigentes (no canceladas): {id, pid, desde, hasta, dias, obs, alertaFecha, autorizo, cancelada}
   let solicitudesTodas = [];
+  let ajustes = [];       // bajas de pendiente: {id, pid, ciclo, dias, motivo, por, fecha}
+  let corrManual = {};    // { 'YYYY': { pid: dias } } corrección a mano de lo que corresponde en un ciclo
+  let _cacheEmp = null;
+  function invalidar(){ _cacheEmp = null; }
   const esAdmin = () => !!(ACCESO && ACCESO.esAdmin);
   const puedeAutorizar = () => puede('vacAutorizar');
   const VAC_VIEW = { estado:'', sel:new Set() };
@@ -5108,26 +5163,82 @@ const Vac = (function(){
     return ok;
   }
 
+  // ---- saldos por ciclo ----
+  // Lo que corresponde en el ciclo y (sin ajustes): Excel para el ciclo base, corrección manual o ley por antigüedad.
+  function corrLegal(p, y){
+    if(!p.ingreso) return {dias:Number(p.diasVac)||0, origen:'listado'};
+    const L = diasLegales(p.ingreso, y);
+    if(L.menos6){
+      const ing = parseISO(p.ingreso), ref = new Date(y,11,31);
+      const dd = ing > ref ? 0 : Math.round((ref-ing)/86400000)+1;
+      return {dias: Math.floor(dd*5/7/20), origen:'prop'};
+    }
+    return {dias:L.dias, origen:'ley'};
+  }
+  // Calcula el saldo de una persona en todos los ciclos. sols = solicitudes (se ignoran canceladas).
+  function calcSaldo(p, sols, ajs, man, hastaCiclo){
+    const pid = p.id;
+    const propias = sols.filter(s=>s.pid===pid && !s.cancelada).slice().sort((a,b)=>a.desde.localeCompare(b.desde) || String(a.id).localeCompare(String(b.id)));
+    const maxC = Math.max(cicloHoy(), CICLO, hastaCiclo||0, ...propias.map(s=>cicloDe(s.desde)));
+    const C = {}, disp = {}, inicio = {}, imput = {};
+    for(let y=CICLO_BASE; y<=maxC; y++){
+      const m = man && man[y] && man[y][pid];
+      let corr, previo = 0, origen, ini;
+      if(y===CICLO_BASE && p.vac){ corr = Number(p.vac.corr)||0; previo = Number(p.vac.tom)||0; ini = Number(p.vac.pend)||0; origen = 'excel'; }
+      else if(m!=null && m!==''){ corr = Number(m)||0; ini = corr; origen = 'manual'; }
+      else { const c = corrLegal(p, y); corr = c.dias; ini = corr; origen = c.origen; }
+      const canc = (ajs||[]).filter(a=>a.pid===pid && Number(a.ciclo)===y).reduce((t,a)=>t+Number(a.dias||0),0);
+      C[y] = { corr, previo, canc, usado:0, ini: ini-canc, origen, sinHist: y===CICLO_BASE ? !(p.vac && !p.vac.sinHist) : false };
+      disp[y] = ini - canc;
+    }
+    const snap = y => { if(inicio[y]!=null) return; let a = 0; for(let k=CICLO_BASE;k<y;k++) a += Math.max(0, disp[k]); inicio[y] = a; };
+    for(const s of propias){
+      const cy = Math.min(maxC, Math.max(CICLO_BASE, cicloDe(s.desde)));
+      for(let y=CICLO_BASE; y<=cy; y++) snap(y);
+      let need = Number(s.dias)||0; const imp = [];
+      for(let y=CICLO_BASE; y<=cy && need>0; y++){ const t = Math.min(Math.max(0, disp[y]), need); if(t>0){ disp[y]-=t; C[y].usado+=t; need-=t; imp.push([y,t]); } }
+      if(need>0){ disp[cy]-=need; C[cy].usado+=need; imp.push([cy,need]); }
+      imput[s.id] = imp;
+    }
+    for(let y=CICLO_BASE; y<=maxC; y++){ snap(y); C[y].pend = disp[y]; }
+    return { C, inicio, imput, maxC };
+  }
+  // Resumen de un ciclo: arrastre (pendiente de ciclos anteriores al empezar), corresponde, disponible, asignado, restante
+  function resumenCiclo(sal, y, sols, pid){
+    const c = sal.C[y] || {ini:0, corr:0};
+    const arrastre = y<=CICLO_BASE ? 0 : (sal.inicio[y]||0);
+    const asignado = sols.filter(s=>s.pid===pid && !s.cancelada && Math.max(CICLO_BASE, cicloDe(s.desde))===y).reduce((t,s)=>t+Number(s.dias||0),0);
+    const disponible = arrastre + c.ini;
+    return { arrastre, corrCiclo:c.ini, disponible, asignado, restante: +(disponible-asignado).toFixed(1), restAnterior: Math.max(0, arrastre-asignado) };
+  }
+
   // ---- personas ----
   function empleados(){
-    return PERSONAL.filter(p=>!p.baja).filter(personaPermitida).map(p=>{
-      const v = p.vac || null;
+    if(_cacheEmp) return _cacheEmp;
+    _cacheEmp = PERSONAL.filter(p=>!p.baja).filter(personaPermitida).map(p=>{
+      const sal = calcSaldo(p, solicitudesTodas, ajustes, corrManual);
+      const r = resumenCiclo(sal, CICLO, solicitudesTodas, p.id);
       return { id:p.id, legajo:p.legajo, nombre:p.nombre, sector:p.sector, gerencia:p.gerencia||'', modalidad:p.modalidad,
                empresa:empresaCorta(p.empresa), cuil: puede('datosVer') ? fmtCuil(datosEfectivos(p).cuil) : '',
-               diasPendientes: v ? Number(v.pend)||0 : (Number(p.diasVac)||0), sinHistorial: v ? !!v.sinHist : true, ingreso: p.ingreso||'' };
+               ...r, diasPendientes: r.disponible, sal, p,
+               sinHistorial: !(p.vac && !p.vac.sinHist), ingreso: p.ingreso||'' };
     });
+    return _cacheEmp;
   }
   const empById = id => empleados().find(e=>e.id===id);
   const sectorLabel = e => e.gerencia ? `${e.sector} · ${e.gerencia}` : e.sector;
+  const enCiclo = s => Math.max(CICLO_BASE, cicloDe(s.desde))===CICLO;
   function solicitudesVisibles(){ const ids = new Set(empleados().map(e=>e.id)); return solicitudes.filter(s=>ids.has(s.pid)); }
-  const asignadoDe = pid => solicitudes.filter(s=>s.pid===pid).reduce((a,s)=>a+Number(s.dias||0),0);
+  const solCiclo = () => solicitudesVisibles().filter(enCiclo);
+  const asignadoDe = pid => solicitudes.filter(s=>s.pid===pid && enCiclo(s)).reduce((a,s)=>a+Number(s.dias||0),0);
   const empresaChip = e => `<span class="tipo-chip ${e==='SPL'?'spl':'spotsline'}">${e}</span>`;
+  const txtImput = s => { const e = empById(s.pid); const imp = e && e.sal.imput[s.id]; return imp && imp.length ? 'Descuenta: ' + imp.map(([y,d])=>`${d}d del ${cicloLbl(y)}`).join(' + ') : ''; };
 
   // ---- validaciones según período (LCT art. 150/151/154) ----
-  // días que corresponden por antigüedad al 31/12 del año en que empieza el período
-  function diasLegales(ingreso){
+  // días que corresponden por antigüedad al 31/12 del año en que empieza el ciclo
+  function diasLegales(ingreso, ciclo){
     if(!ingreso) return null;
-    const ing = parseISO(ingreso), ref = new Date(PERIOD_START.getFullYear(), 11, 31);
+    const ing = parseISO(ingreso), ref = new Date((ciclo==null ? CICLO : ciclo), 11, 31);
     if(ing > ref) return {dias:0, anios:0, menos6:true};
     let a = ref.getFullYear() - ing.getFullYear(); if(ref.getMonth() < ing.getMonth() || (ref.getMonth()===ing.getMonth() && ref.getDate() < ing.getDate())) a--;
     const menos6 = (ref - ing) < 182*86400000;
@@ -5141,14 +5252,16 @@ const Vac = (function(){
     const e = empById(s.pid), out = [];
     if(!e) return out;
     const a = parseISO(s.desde), b = parseISO(s.hasta);
-    if(a < PERIOD_START || b > PERIOD_END) out.push(`Fuera del período legal (01/10/2026 al 30/04/2027)`);
+    const cy = Math.max(CICLO_BASE, cicloDe(s.desde)), ps = new Date(cy,9,1), pe = new Date(cy+1,3,30);
+    if(a < ps || b > pe) out.push(`Fuera del período legal del ciclo ${cicloLbl(cy)} (01/10/${cy} al 30/04/${cy+1})`);
     if(!validateStartDate(s.desde)) out.push('No inicia un lunes hábil');
     const propias = lista.filter(x=>x.pid===s.pid && x.id!==s.id);
-    const total = propias.reduce((t,x)=>t+Number(x.dias||0),0) + Number(s.dias||0);
-    if(total > e.diasPendientes) out.push(`Con esta solicitud suma ${total} días y tiene ${e.diasPendientes} pendientes`);
-    const L = diasLegales(e.ingreso);
+    // disponible del ciclo de la solicitud, sin contar esta solicitud
+    const sal = calcSaldo(e.p, propias, ajustes, corrManual, cy), rc = resumenCiclo(sal, cy, propias, s.pid);
+    const total = rc.asignado + Number(s.dias||0);
+    if(total > rc.disponible) out.push(`Con esta solicitud suma ${total} días en el ciclo ${cicloLbl(cy)} y tiene ${rc.disponible} disponibles (${rc.arrastre} pendientes anteriores + ${rc.corrCiclo} del ciclo)`);
+    const L = diasLegales(e.ingreso, cy);
     if(L && L.menos6) out.push('Tiene menos de 6 meses de antigüedad: le corresponde 1 día cada 20 trabajados');
-    else if(L && total > L.dias) out.push(`Supera los ${L.dias} días que le corresponden por antigüedad (${L.anios} años): usa días de períodos anteriores`);
     if(propias.some(x=>seCruzan(x,s))) out.push('Se superpone con otra solicitud de la misma persona');
     const mismos = empleados().filter(x=>x.sector===e.sector && x.id!==e.id).map(x=>x.id);
     const cruzan = [...new Set(lista.filter(x=>mismos.includes(x.pid) && x.id!==s.id && seCruzan(x,s)).map(x=>x.pid))];
@@ -5167,7 +5280,7 @@ const Vac = (function(){
   const chipEstado = s => { const x = estadoSol(s); return `<span class="vac-est ${x.k}" title="${escHtml(x.tip)}">${x.txt}</span>`; };
   // peor estado de una persona para pintar el nombre
   function nombreConEstado(e){
-    const est = solicitudes.filter(s=>s.pid===e.id).map(estadoSol);
+    const est = solicitudes.filter(s=>s.pid===e.id && enCiclo(s)).map(estadoSol);
     const falta = est.filter(x=>x.k==='falta'), exc = est.filter(x=>x.k==='excep');
     if(falta.length) return `<span class="vac-nom-falta" title="${escHtml(falta.map(x=>x.tip).join('\n'))}">${escHtml(e.nombre)}</span>`;
     if(exc.length) return `<span class="vac-nom-excep" title="${escHtml(exc.map(x=>x.tip).join('\n'))}">${escHtml(e.nombre)}</span>`;
@@ -5190,7 +5303,9 @@ const Vac = (function(){
     solicitudesTodas = (v && Array.isArray(v.solicitudes)) ? v.solicitudes : [];
     solicitudes = solicitudesTodas.filter(s=>!s.cancelada);
     feriados = (v && Array.isArray(v.feriados)) ? v.feriados : [...DEFAULT_FERIADOS];
-    cargado = true;
+    ajustes = (v && Array.isArray(v.ajustes)) ? v.ajustes : [];
+    corrManual = (v && v.corrManual && typeof v.corrManual==='object') ? v.corrManual : {};
+    cargado = true; invalidar();
   }
   async function mutar(fn){
     const r = await leerFilaEstricta(ROW_ID);
@@ -5198,10 +5313,13 @@ const Vac = (function(){
     const data = r.valor || { solicitudes:[], feriados:[...DEFAULT_FERIADOS] };
     if(!Array.isArray(data.solicitudes)) data.solicitudes = [];
     if(!Array.isArray(data.feriados)) data.feriados = [...DEFAULT_FERIADOS];
+    if(!Array.isArray(data.ajustes)) data.ajustes = [];
+    if(!data.corrManual || typeof data.corrManual!=='object') data.corrManual = {};
     fn(data);
-    const ok = await guardarFilaSupabase(ROW_ID, { solicitudes:data.solicitudes, feriados:data.feriados, updatedAt:new Date().toISOString() });
+    const ok = await guardarFilaSupabase(ROW_ID, { ...data, updatedAt:new Date().toISOString() });
     if(!ok){ msg('No se pudo guardar. Probá de nuevo.', true); return false; }
     solicitudesTodas = data.solicitudes; solicitudes = solicitudesTodas.filter(s=>!s.cancelada); feriados = data.feriados;
+    ajustes = data.ajustes; corrManual = data.corrManual; invalidar();
     return true;
   }
   function msg(t, err){ const el=$('vacFormMsg'); el.textContent=t; el.style.color = err ? 'var(--danger)' : 'var(--good)'; }
@@ -5214,18 +5332,27 @@ const Vac = (function(){
 
   // ---- KPIs / aviso ----
   function renderKPIs(){
-    const emps = empleados(), sols = solicitudesVisibles();
+    const emps = empleados(), sols = solCiclo();
     const conCarga = new Set(sols.map(s=>s.pid)).size;
     const total = sols.reduce((a,s)=>a+Number(s.dias||0),0);
-    const excedidos = emps.filter(e=>asignadoDe(e.id) > e.diasPendientes).length;
+    const excedidos = emps.filter(e=>e.asignado > e.disponible).length;
+    const conArr = emps.filter(e=>e.arrastre>0), libres = emps.filter(e=>e.restAnterior>0);
+    const diasArr = conArr.reduce((t,e)=>t+e.arrastre,0), diasLib = libres.reduce((t,e)=>t+e.restAnterior,0);
+    const disp = emps.reduce((t,e)=>t+Math.max(0,e.disponible),0);
     const ests = sols.map(estadoSol);
     const conAl = ests.filter(x=>x.al.length).length, faltaAut = ests.filter(x=>x.k==='falta').length, conObs = ests.filter(x=>x.k==='excep').length;
+    const base = CICLO<=CICLO_BASE;
     const k = [
       {num:emps.length, lbl:'Personal activo', cls:'', f:''},
+      ...(base ? [] : [
+        {num:`${conArr.length} <span style="font-size:13px;color:var(--muted)">· ${diasArr}d</span>`, lbl:`Con pendiente de ciclos anteriores (al 01/10/${CICLO})`, cls:conArr.length?'warn':'ok', f:'arrastre'},
+        {num:`${libres.length} <span style="font-size:13px;color:var(--muted)">· ${diasLib}d</span>`, lbl:'Pendiente anterior sin asignar todavía', cls:libres.length?'warn':'ok', f:'arrastreLibre'},
+      ]),
+      {num:disp, lbl:`Días disponibles ciclo ${cicloLbl(CICLO)}${base?'':' (anterior + ciclo)'}`, cls:'', f:''},
       {num:conCarga, lbl:'Con solicitud cargada', cls:'', f:'concarga'},
       {num:emps.length-conCarga, lbl:'Sin cargar todavía', cls:(emps.length-conCarga)>0?'warn':'ok', f:'sincargar'},
-      {num:total, lbl:'Días asignados (período)', cls:'', f:'concarga'},
-      {num:excedidos, lbl:'Con más días asignados que pendientes', cls:excedidos>0?'warn':'ok', f:'excedidos'},
+      {num:total, lbl:'Días asignados (ciclo)', cls:'', f:'concarga'},
+      {num:excedidos, lbl:'Con más días asignados que disponibles', cls:excedidos>0?'warn':'ok', f:'excedidos'},
       {num:faltaAut, lbl:'Falta autorizar', cls:faltaAut>0?'warn':'ok', f:'faltaAut'},
       {num:conAl, lbl:'Con observaciones (período, días, lunes, sector)', cls:conAl>0?'warn':'ok', f:'obs'},
       {num:conObs, lbl:'Autorizadas con observaciones', cls:'', f:'excep'},
@@ -5273,14 +5400,20 @@ const Vac = (function(){
     const id = $('vacSelEmpleado').value, box = $('vacEmpMeta');
     if(!id){ box.style.display='none'; renderMini(null); return; }
     const e = empById(id); if(!e){ box.style.display='none'; renderMini(null); return; }
-    const asignado = asignadoDe(id), restante = +(e.diasPendientes - asignado).toFixed(1);
+    const asignado = e.asignado, restante = e.restante;
     const cls = restante>0 ? 'pend-pos' : (restante===0 ? 'pend-zero' : 'pend-neg');
+    const base = CICLO<=CICLO_BASE, cc = e.sal.C[CICLO] || {};
+    const anteriores = []; for(let y=CICLO_BASE; y<CICLO; y++){ const c = e.sal.C[y]; if(c && c.pend>0) anteriores.push(`${cicloLbl(y)}: ${c.pend}`); }
     box.style.display='flex';
     box.innerHTML = `<span>${chipModalidad(e.modalidad)} ${empresaChip(e.empresa)}</span>
       <span>Sector: <b>${escHtml(sectorLabel(e))}</b></span>
-      <span>Días pendientes: <b>${e.diasPendientes}</b>${e.sinHistorial?' <span class="tag">sin historial verificado</span>':''}</span>
-      <span>Ya asignado en este período: <b>${asignado}</b></span>
-      <span class="${cls}">Restante: <b>${restante}</b></span>`;
+      ${base ? `<span>Pendiente ${cicloLbl(CICLO)}: <b>${e.corrCiclo}</b>${e.p.vac?` <span class="note">(corresponden ${cc.corr}, tomados ${cc.previo})</span>`:''}${e.sinHistorial?' <span class="tag">sin historial verificado</span>':''}</span>`
+        : `<span class="${e.arrastre>0?'pend-pos':''}">Pendiente ciclos anteriores: <b>${e.arrastre}</b>${e.sinHistorial?' <span class="tag">sin historial verificado</span>':''}</span>
+           <span>Corresponde ${cicloLbl(CICLO)}: <b>${e.corrCiclo}</b>${cc.origen==='manual'?' <span class="tag">corregido</span>':cc.origen==='prop'?' <span class="tag">proporcional</span>':''}</span>
+           <span>Disponible: <b>${e.disponible}</b></span>`}
+      <span>Asignado en el ciclo: <b>${asignado}</b></span>
+      <span class="${cls}">Restante: <b>${restante}</b></span>
+      ${!base && e.arrastre>0 ? `<span class="note" style="flex-basis:100%; font-family:inherit;">Las solicitudes usan primero el pendiente anterior${anteriores.length?` (queda sin usar: ${anteriores.join(' · ')})`:' (ya está todo asignado)'}.</span>` : ''}`;
     renderMini(id);
   }
   function botonesSol(it){
@@ -5301,7 +5434,7 @@ const Vac = (function(){
           <td><span class="vac-est sinreg" title="${escHtml(`Cancelada por ${it.cancelada.por||''} el ${fmtDisplay((it.cancelada.fecha||'').slice(0,10)||it.desde)}${it.cancelada.motivo?' — '+it.cancelada.motivo:''}`)}">Cancelada</span></td><td>${escHtml(it.obs||'')}</td><td style="white-space:nowrap">${botonesSol(it)}</td></tr>`;
         const x = estadoSol(it);
         return `<tr><td class="mono">${fmtDisplay(it.desde)}${x.al.length?`<span class="warn-badge" title="${escHtml(x.al.join(' · '))}">⚠</span>`:''}</td>
-        <td class="mono">${fmtDisplay(it.hasta)}</td><td class="mono">${it.dias}</td><td>${chipEstado(it)}</td><td>${escHtml(it.obs||'')}</td>
+        <td class="mono">${fmtDisplay(it.hasta)}</td><td class="mono" title="${escHtml(txtImput(it))}">${it.dias}<span class="note" style="display:block;font-size:10px;">${cicloLbl(Math.max(CICLO_BASE,cicloDe(it.desde)))}</span></td><td>${chipEstado(it)}</td><td>${escHtml(it.obs||'')}</td>
         <td style="white-space:nowrap">${botonesSol(it)}</td></tr>`; }).join('') + `</tbody></table>`;
   }
   function recalcDias(){
@@ -5376,15 +5509,17 @@ const Vac = (function(){
   // ---- pestaña Solicitudes ----
   function filtraEstado(e){
     const f = VAC_VIEW.estado; if(!f) return true;
-    const items = solicitudes.filter(s=>s.pid===e.id), ests = items.map(estadoSol);
+    const items = solicitudes.filter(s=>s.pid===e.id && enCiclo(s)), ests = items.map(estadoSol);
     if(f==='sincargar') return !items.length;
     if(f==='concarga') return items.length>0;
-    if(f==='excedidos') return asignadoDe(e.id) > e.diasPendientes;
+    if(f==='excedidos') return e.asignado > e.disponible;
+    if(f==='arrastre') return e.arrastre > 0;
+    if(f==='arrastreLibre') return e.restAnterior > 0;
     if(f==='faltaAut') return ests.some(x=>x.k==='falta');
     if(f==='obs') return ests.some(x=>x.al.length);
     if(f==='excep') return ests.some(x=>x.k==='excep');
     if(f==='ok') return ests.some(x=>x.k==='ok');
-    if(f==='canceladas') return solicitudesTodas.some(s=>s.pid===e.id && s.cancelada);
+    if(f==='canceladas') return solicitudesTodas.some(s=>s.pid===e.id && s.cancelada && enCiclo(s));
     return true;
   }
   function renderSolicitudes(){
@@ -5400,19 +5535,21 @@ const Vac = (function(){
     const visiblesIds = new Set();
     if(!rows.length){ wrap.innerHTML = '<div class="empty">Sin resultados para esa búsqueda o filtro.</div>'; actualizarSel(visiblesIds); return; }
     rows = ordenarFilas('vacSol', rows, { legajo:e=>Number(e.legajo), nombre:e=>e.nombre, modalidad:e=>e.modalidad, empresa:e=>e.empresa, sector:e=>e.sector,
-      pendientes:e=>e.diasPendientes, asignado:e=>asignadoDe(e.id), restante:e=>e.diasPendientes-asignadoDe(e.id),
-      fechas:e=>{ const d = solicitudes.filter(s=>s.pid===e.id).map(s=>s.desde).sort(); return d[0]||null; } });
+      arrastre:e=>e.arrastre, corr:e=>e.corrCiclo, pendientes:e=>e.disponible, asignado:e=>e.asignado, restante:e=>e.restante,
+      fechas:e=>{ const d = solicitudes.filter(s=>s.pid===e.id && enCiclo(s)).map(s=>s.desde).sort(); return d[0]||null; } });
+    const base = CICLO<=CICLO_BASE;
     const verCanc = VAC_VIEW.estado==='canceladas';
-    wrap.innerHTML = `<table><thead><tr>${thOrden('vacSol','legajo','Legajo')}${thOrden('vacSol','nombre','Nombre')}${thOrden('vacSol','modalidad','Modalidad')}${thOrden('vacSol','empresa','Empresa')}${thOrden('vacSol','sector','Sector')}${thOrden('vacSol','pendientes','Pendientes')}${thOrden('vacSol','asignado','Asignado')}${thOrden('vacSol','restante','Restante')}${thOrden('vacSol','fechas','Solicitudes')}</tr></thead><tbody>` +
+    wrap.innerHTML = `<table><thead><tr>${thOrden('vacSol','legajo','Legajo')}${thOrden('vacSol','nombre','Nombre')}${thOrden('vacSol','modalidad','Modalidad')}${thOrden('vacSol','empresa','Empresa')}${thOrden('vacSol','sector','Sector')}${base?thOrden('vacSol','corr','Pendiente '+cicloLbl(CICLO)):thOrden('vacSol','arrastre','Pend. anterior')+thOrden('vacSol','corr','Corresp. '+cicloLbl(CICLO))+thOrden('vacSol','pendientes','Disponible')}${thOrden('vacSol','asignado','Asignado')}${thOrden('vacSol','restante','Restante')}${thOrden('vacSol','fechas','Solicitudes')}</tr></thead><tbody>` +
       rows.map(e=>{
-        const items = (verCanc ? solicitudesTodas : solicitudes).filter(s=>s.pid===e.id).sort((a,b)=>a.desde.localeCompare(b.desde));
-        const asignado = asignadoDe(e.id), rest = +(e.diasPendientes-asignado).toFixed(1);
+        const items = (verCanc ? solicitudesTodas : solicitudes).filter(s=>s.pid===e.id && enCiclo(s)).sort((a,b)=>a.desde.localeCompare(b.desde));
+        const asignado = e.asignado, rest = e.restante;
         const sc = rest>0 ? 'status-warn' : (rest===0 ? 'status-ok' : 'status-over');
         const ft = items.length ? items.map(it=>{ if(!it.cancelada) visiblesIds.add(it.id);
-            return `<div class="vac-sol-linea ${it.cancelada?'cancelada':''}">${selMode && !it.cancelada?`<input type="checkbox" data-vacsel="${it.id}" ${VAC_VIEW.sel.has(it.id)?'checked':''}>`:''}<span class="mono">${fmtDisplay(it.desde)}–${fmtDisplay(it.hasta)} (${it.dias}d)</span> ${it.cancelada?'<span class="vac-est sinreg">Cancelada</span>':chipEstado(it)} ${botonesSol(it)}</div>`; }).join('')
+            return `<div class="vac-sol-linea ${it.cancelada?'cancelada':''}">${selMode && !it.cancelada?`<input type="checkbox" data-vacsel="${it.id}" ${VAC_VIEW.sel.has(it.id)?'checked':''}>`:''}<span class="mono" title="${escHtml(it.cancelada?'':txtImput(it))}">${fmtDisplay(it.desde)}–${fmtDisplay(it.hasta)} (${it.dias}d)</span> ${it.cancelada?'<span class="vac-est sinreg">Cancelada</span>':chipEstado(it)} ${botonesSol(it)}</div>`; }).join('')
           : `<span class="tag">sin cargar</span>${canEdit()?` <button class="btn secondary small" data-vaccargar="${e.id}">Cargar</button>`:''}`;
         return `<tr><td class="mono">${e.legajo}</td><td><span class="vac-nom-link" data-vaccargar="${e.id}" title="${canEdit()?'Abrir en Cargar solicitud':''}">${nombreConEstado(e)}</span></td><td>${chipModalidad(e.modalidad)}</td><td>${empresaChip(e.empresa)}</td><td>${escHtml(e.sector)}</td>
-          <td class="mono">${e.diasPendientes}</td><td class="mono">${asignado}</td><td class="mono ${sc}">${rest}</td><td style="font-size:12px; white-space:normal;">${ft}</td></tr>`;
+          ${base ? `<td class="mono" title="${escHtml(e.p.vac?`Corresponden ${e.sal.C[CICLO].corr} − tomados ${e.sal.C[CICLO].previo} (Excel)`:'Sin Excel de pendientes: corresponde por antigüedad')}">${e.corrCiclo}</td>`
+            : `<td class="mono ${e.arrastre>0?'status-warn':''}" title="${escHtml(e.restAnterior>0?`Quedan ${e.restAnterior} días del pendiente anterior sin asignar`:'')}">${e.arrastre}${e.restAnterior>0&&e.restAnterior<e.arrastre?`<span class="note" style="display:block;font-size:10px;">libre ${e.restAnterior}</span>`:''}</td><td class="mono">${e.corrCiclo}</td><td class="mono"><b>${e.disponible}</b></td>`}<td class="mono">${asignado}</td><td class="mono ${sc}">${rest}</td><td style="font-size:12px; white-space:normal;">${ft}</td></tr>`;
       }).join('') + `</tbody></table>`;
     actualizarSel(visiblesIds);
   }
@@ -5512,17 +5649,114 @@ const Vac = (function(){
 
   // ---- exportar / importar pendientes ----
   function exportar(){
-    const emps = empleados();
-    const sol = [['Legajo','Nombre','Modalidad','Empresa','Sector','CUIL','Desde','Hasta','Dias','Observacion','Autorizacion','Autorizo','Observaciones de la validacion']];
-    emps.forEach(e=>solicitudes.filter(s=>s.pid===e.id).sort((a,b)=>a.desde.localeCompare(b.desde)).forEach(s=>{ const x = estadoSol(s);
-      sol.push([e.legajo,e.nombre,e.modalidad,e.empresa,e.sector,e.cuil,s.desde,s.hasta,s.dias,s.obs||'',x.txt.replace('✓ ',''),s.autorizo?s.autorizo.nombre:'',x.al.join(' / ')]); }));
-    const res = [['Legajo','Nombre','Modalidad','Empresa','Sector','Dias Pendientes','Dias Asignados','Restante']];
+    const emps = empleados(), L = cicloLbl(CICLO);
+    const sol = [['Legajo','Nombre','Modalidad','Empresa','Sector','CUIL','Ciclo','Desde','Hasta','Dias','Descuenta de','Observacion','Autorizacion','Autorizo','Observaciones de la validacion']];
+    emps.forEach(e=>solicitudes.filter(s=>s.pid===e.id && enCiclo(s)).sort((a,b)=>a.desde.localeCompare(b.desde)).forEach(s=>{ const x = estadoSol(s);
+      sol.push([e.legajo,e.nombre,e.modalidad,e.empresa,e.sector,e.cuil,L,s.desde,s.hasta,s.dias,(e.sal.imput[s.id]||[]).map(([y,d])=>`${d}d ${cicloLbl(y)}`).join(' + '),s.obs||'',x.txt.replace('✓ ',''),s.autorizo?s.autorizo.nombre:'',x.al.join(' / ')]); }));
+    const res = [['Legajo','Nombre','Modalidad','Empresa','Sector','Pendiente ciclos anteriores',`Corresponde ${L}`,'Disponible','Dias Asignados','Restante','Pendiente anterior sin asignar']];
     emps.slice().sort((a,b)=>a.modalidad.localeCompare(b.modalidad)||a.sector.localeCompare(b.sector)||a.nombre.localeCompare(b.nombre))
-      .forEach(e=>{ const as = asignadoDe(e.id); res.push([e.legajo,e.nombre,e.modalidad,e.empresa,e.sector,e.diasPendientes,as,+(e.diasPendientes-as).toFixed(1)]); });
+      .forEach(e=>res.push([e.legajo,e.nombre,e.modalidad,e.empresa,e.sector,e.arrastre,e.corrCiclo,e.disponible,e.asignado,e.restante,e.restAnterior]));
+    const ys = ciclosLista();
+    const sal = [['Legajo','Nombre','Empresa','Sector', ...ys.flatMap(y=>[`${cicloLbl(y)} Corresponde`,`${cicloLbl(y)} Tomado/Usado`,`${cicloLbl(y)} Dado de baja`,`${cicloLbl(y)} Pendiente`]), 'Pendiente total']];
+    emps.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(e=>{
+      const fila = [e.legajo,e.nombre,e.empresa,e.sector]; let tot = 0;
+      ys.forEach(y=>{ const c = e.sal.C[y] || {corr:0,previo:0,usado:0,canc:0,pend:0}; fila.push(c.corr, (c.previo||0)+c.usado, c.canc, c.pend); tot += c.pend; });
+      fila.push(tot); sal.push(fila);
+    });
+    const aj = [['Fecha','Legajo','Nombre','Ciclo','Dias','Motivo','Por']];
+    ajustes.forEach(a=>{ const e = empById(a.pid); if(e) aj.push([(a.fecha||'').slice(0,10), e.legajo, e.nombre, cicloLbl(Number(a.ciclo)), a.dias, a.motivo||'', a.por||'']); });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(res), 'Resumen');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sol), 'Solicitudes');
-    XLSX.writeFile(wb, 'Vacaciones_2026-2027_Spotsline.xlsx');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sal), 'Saldos por ciclo');
+    if(aj.length>1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aj), 'Bajas de pendientes');
+    XLSX.writeFile(wb, `Vacaciones_${CICLO}-${CICLO+1}_Spotsline.xlsx`);
+  }
+
+  // ---- ciclos (campañas) ----
+  function ciclosLista(){
+    const max = Math.max(cicloHoy(), CICLO, ...solicitudesTodas.map(s=>cicloDe(s.desde)));
+    const out = []; for(let y=CICLO_BASE; y<=max; y++) out.push(y); return out;
+  }
+  function poblarCiclos(){
+    const sel = $('vacCiclo'), hoy = cicloHoy(), ys = ciclosLista();
+    if(canEdit() && !ys.includes(hoy+1)) ys.push(hoy+1);   // permite preparar el próximo ciclo
+    sel.innerHTML = ys.map(y=>`<option value="${y}">${cicloLbl(y)}${y===CICLO_BASE?' (base)':''}${y===hoy?' · actual':''}${y>hoy?' · próximo':''}</option>`).join('');
+    sel.value = String(CICLO);
+    const base = CICLO<=CICLO_BASE;
+    $('vacPeriodoNota').innerHTML = `Ciclo <b>${cicloLbl(CICLO)}</b> · Período 01/10/${CICLO} → 30/04/${CICLO+1}${base?' · saldos del Excel de pendientes':' · incluye el pendiente de ciclos anteriores'} · carga y seguimiento por RRHH. Las vacaciones empiezan un lunes hábil y las autoriza el jefe.`;
+    const nf = $('vacNuevoFeriado'); nf.min = `${CICLO}-10-01`; nf.max = `${CICLO+1}-04-30`;
+  }
+
+  // ---- pestaña Saldos por ciclo ----
+  function celdaSaldo(e, y){
+    const c = e.sal.C[y]; if(!c) return '<td></td>';
+    const esBase = y===CICLO_BASE && c.origen==='excel';
+    const cls = c.pend<0 ? 'neg' : c.pend===0 ? 'cero' : (y<CICLO ? 'arr' : '');
+    const usado = (c.previo||0) + c.usado;
+    const tip = [`Corresponde ${c.corr}${c.origen==='excel'?' (Excel)':c.origen==='manual'?' (corregido a mano)':c.origen==='prop'?' (proporcional, menos de 6 meses)':c.origen==='listado'?' (del listado, sin fecha de ingreso)':' (por antigüedad)'}`,
+      c.previo ? `Tomados según Excel: ${c.previo}` : '', c.usado ? `Usado por solicitudes del panel: ${c.usado}` : '',
+      c.canc ? `Dado de baja: ${c.canc}` : '', `Pendiente: ${c.pend}`, c.sinHist ? 'Sin historial verificado' : ''].filter(Boolean).join('\n');
+    const acc = [];
+    if(esAdmin() && c.pend>0) acc.push(`<span class="lnk" data-vacbaja="${e.id}|${y}" title="Dar de baja días pendientes de este ciclo">dar de baja</span>`);
+    if(canEdit() && !esBase) acc.push(`<span class="lnk" data-vaccorr="${e.id}|${y}" title="Corregir lo que corresponde en este ciclo">editar</span>`);
+    return `<td class="${y===CICLO?'ciclo-act':''}"><div class="vac-sal ${cls}" title="${escHtml(tip)}"><b>${c.pend}</b>${c.sinHist?' <span class="note">s/h</span>':''}<span class="det">${c.corr}${c.origen==='manual'?'*':''} − ${usado}${c.canc?` − ${c.canc} baja`:''}</span>${acc.join('')}</div></td>`;
+  }
+  function renderSaldos(){
+    const term = ($('vacSalBuscar').value||'').toLowerCase(), f = $('vacSalFiltro').value, ys = ciclosLista();
+    const prev = y => ys.filter(k=>k<y);
+    let rows = empleados().filter(e=>e.nombre.toLowerCase().includes(term) || e.sector.toLowerCase().includes(term)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+    if(f==='anterior') rows = rows.filter(e=>e.arrastre>0);
+    if(f==='libre') rows = rows.filter(e=>e.restAnterior>0);
+    if(f==='negativo') rows = rows.filter(e=>ys.some(y=>(e.sal.C[y]||{}).pend<0));
+    if(f==='manual') rows = rows.filter(e=>ys.some(y=>(e.sal.C[y]||{}).origen==='manual'));
+    rows = ordenarFilas('vacSal', rows, { legajo:e=>Number(e.legajo), nombre:e=>e.nombre, sector:e=>e.sector, ingreso:e=>e.ingreso,
+      ...Object.fromEntries(ys.map(y=>['c'+y, e=>(e.sal.C[y]||{}).pend||0])), total:e=>ys.reduce((t,y)=>t+((e.sal.C[y]||{}).pend||0),0) });
+    const totC = {}; ys.forEach(y=>totC[y] = rows.reduce((t,e)=>t+((e.sal.C[y]||{}).pend||0),0));
+    $('vacSalInfo').textContent = `${rows.length} persona(s) · formato: pendiente / corresponde − usado`;
+    if(!rows.length){ $('vacSalWrap').innerHTML = '<div class="empty">Sin resultados para esa búsqueda o filtro.</div>'; }
+    else $('vacSalWrap').innerHTML = `<div style="overflow-x:auto"><table><thead><tr>${thOrden('vacSal','legajo','Legajo')}${thOrden('vacSal','nombre','Nombre')}${thOrden('vacSal','sector','Sector')}${thOrden('vacSal','ingreso','Ingreso')}${ys.map(y=>thOrden('vacSal','c'+y, cicloLbl(y)+(y===CICLO_BASE?' (Excel)':''), y===CICLO?'ciclo-act':'')).join('')}${thOrden('vacSal','total','Pendiente total')}</tr></thead><tbody>` +
+      rows.map(e=>{ const tot = ys.reduce((t,y)=>t+((e.sal.C[y]||{}).pend||0),0);
+        return `<tr><td class="mono">${e.legajo}</td><td><span class="vac-nom-link" data-vaccargar="${e.id}">${escHtml(e.nombre)}</span></td><td>${escHtml(e.sector)}</td><td class="mono">${e.ingreso?fmtDisplay(e.ingreso):'—'}</td>${ys.map(y=>celdaSaldo(e,y)).join('')}<td class="mono"><b>${tot}</b></td></tr>`; }).join('') +
+      `<tr><td></td><td><b>Total</b></td><td></td><td></td>${ys.map(y=>`<td class="mono ${y===CICLO?'ciclo-act':''}"><b>${totC[y]}</b></td>`).join('')}<td class="mono"><b>${ys.reduce((t,y)=>t+totC[y],0)}</b></td></tr></tbody></table></div>`;
+    const ids = new Set(empleados().map(e=>e.id));
+    const aj = ajustes.filter(a=>ids.has(a.pid)).slice().sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+    $('vacAjustesWrap').innerHTML = aj.length ? `<table><thead><tr><th>Fecha</th><th>Persona</th><th>Ciclo</th><th>Días</th><th>Motivo</th><th>Por</th><th></th></tr></thead><tbody>` +
+      aj.map(a=>`<tr><td class="mono">${a.fecha?fmtDisplay(a.fecha.slice(0,10)):''}</td><td>${escHtml((empById(a.pid)||{}).nombre||a.pid)}</td><td class="mono">${cicloLbl(Number(a.ciclo))}</td><td class="mono">${a.dias}</td><td>${escHtml(a.motivo||'')}</td><td>${escHtml(a.por||'')}</td><td>${esAdmin()?`<button class="btn secondary small" data-vacajdel="${a.id}">Deshacer</button>`:''}</td></tr>`).join('') + `</tbody></table>`
+      : '<div class="empty" style="padding:16px;">No hay bajas de pendientes.</div>';
+  }
+  async function darDeBaja(pid, y){
+    const e = empById(pid), c = e && e.sal.C[y]; if(!c || !esAdmin()) return;
+    const v = prompt(`${e.nombre} — ciclo ${cicloLbl(y)}\nTiene ${c.pend} días pendientes de ese ciclo.\n\n¿Cuántos días das de baja? (dejan de figurar como pendientes)`, String(c.pend));
+    if(v===null) return; const dias = Number(String(v).replace(',','.'));
+    if(!dias || dias<=0){ alert('Ingresá una cantidad de días mayor a 0.'); return; }
+    if(dias > c.pend && !confirm(`Son más días (${dias}) que los pendientes (${c.pend}). ¿Seguir igual?`)) return;
+    const motivo = prompt('Motivo (ej: vencido, liquidado en la baja, error de carga):', '');
+    if(motivo===null) return;
+    const ok = await mutar(d=>{ d.ajustes.push({ id:uid(), pid, ciclo:y, dias, motivo:motivo.trim(), por:ACCESO.usuario.nombre, fecha:new Date().toISOString() }); });
+    if(ok){ registrarCambio('Vacaciones', 'Pendiente dado de baja', `${e.nombre} · ciclo ${cicloLbl(y)} · ${dias} días${motivo.trim()?' · '+motivo.trim():''}`); render(); }
+  }
+  async function deshacerBaja(id){
+    const a = ajustes.find(x=>x.id===id); if(!a || !esAdmin() || !confirm('¿Deshacer esta baja? Los días vuelven a figurar como pendientes.')) return;
+    if(await mutar(d=>{ d.ajustes = d.ajustes.filter(x=>x.id!==id); })){ registrarCambio('Vacaciones', 'Baja de pendiente deshecha', `${(empById(a.pid)||{}).nombre||a.pid} · ciclo ${cicloLbl(Number(a.ciclo))} · ${a.dias} días`); render(); }
+  }
+  async function corregirCorr(pid, y){
+    const e = empById(pid), c = e && e.sal.C[y]; if(!c || !canEdit()) return;
+    const leg = corrLegal(e.p, y).dias;
+    const v = prompt(`${e.nombre} — ciclo ${cicloLbl(y)}\nPor antigüedad le corresponden ${leg} días${c.origen==='manual'?` (hoy está corregido a ${c.corr})`:''}.\n\nDías que le corresponden en este ciclo (dejá vacío para volver al cálculo por antigüedad):`, c.origen==='manual' ? String(c.corr) : '');
+    if(v===null) return; const t = String(v).trim();
+    if(t!=='' && (isNaN(Number(t.replace(',','.'))) || Number(t.replace(',','.'))<0)){ alert('Ingresá un número válido.'); return; }
+    const ok = await mutar(d=>{ const m = d.corrManual[y] = d.corrManual[y] || {}; if(t==='') delete m[pid]; else m[pid] = Number(t.replace(',','.')); });
+    if(ok){ registrarCambio('Vacaciones', 'Días del ciclo corregidos', `${e.nombre} · ciclo ${cicloLbl(y)} · ${t===''?'vuelve a antigüedad ('+leg+')':t+' días'}`); render(); }
+  }
+  // Para la ficha de la persona (lee los datos guardados sin depender de que la solapa esté abierta)
+  function resumenFicha(p, v){
+    const sols = (v && Array.isArray(v.solicitudes)) ? v.solicitudes : [], ajs = (v && Array.isArray(v.ajustes)) ? v.ajustes : [], man = (v && v.corrManual) || {};
+    const sal = calcSaldo(p, sols, ajs, man), hoy = Math.max(CICLO_BASE, cicloHoy());
+    const lineas = []; let tot = 0;
+    for(let y=CICLO_BASE; y<=sal.maxC; y++){ const c = sal.C[y]; tot += c.pend;
+      lineas.push(`<li>${cicloLbl(y)}${y===hoy?' (actual)':''}: corresponde ${c.corr}${c.previo?`, tomados ${c.previo}`:''}${c.usado?`, usado ${c.usado}`:''}${c.canc?`, dado de baja ${c.canc}`:''} → <b>pendiente ${c.pend}</b>${c.sinHist?' <span class="ropa-peq">(sin historial verificado)</span>':''}</li>`); }
+    return `<div>Pendiente total: <b>${tot}</b> días</div><ul>${lineas.join('')}</ul>`;
   }
   function filasPendientes(ws, hasGerencia){
     const aoa = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:''}), rows = [];
@@ -5567,15 +5801,18 @@ const Vac = (function(){
     document.querySelectorAll('.vtabpanel').forEach(p=>p.classList.toggle('active', p.id==='vtab-'+nombre));
     if(nombre==='calendario') renderCalendario();
     if(nombre==='solicitudes') renderSolicitudes();
+    if(nombre==='saldos') renderSaldos();
   }
   function render(){
     if(!uiOk) return;
+    invalidar(); poblarCiclos();
     renderSub(); renderKPIs(); renderAviso(); poblarSelect(); actualizarMeta(); renderFeriados(); renderSolicitudes();
     const pa = puedeAutorizar();
     $('vacAutWrap').style.display = pa ? 'flex' : 'none';
     $('vacAutLbl').innerHTML = `Autorizar ahora, como <b>${escHtml((ACCESO.usuario||{}).nombre||'')}</b> (jefe)`;
     $('vacAutNota').style.display = pa ? 'none' : 'block';
     if($('vtab-calendario').classList.contains('active')) renderCalendario();
+    if($('vtab-saldos').classList.contains('active')) renderSaldos();
   }
   async function init(){
     if(uiOk){ render(); return; }
@@ -5586,6 +5823,16 @@ const Vac = (function(){
     $('vacDesde').addEventListener('change', ()=>{ recalcDias(); checkFecha(); });
     $('vacHasta').addEventListener('change', recalcDias);
     $('vacBtnAgregar').addEventListener('click', agregar);
+    $('vacCiclo').addEventListener('change', e=>{ setCiclo(Number(e.target.value)); VAC_VIEW.sel.clear(); ZOOM.ppd = 0; ZOOM.preset = 'periodo'; $('vacMiniList').innerHTML=''; render(); });
+    $('vacSalBuscar').addEventListener('input', renderSaldos);
+    $('vacSalFiltro').addEventListener('change', renderSaldos);
+    $('vacSalWrap').addEventListener('click', e=>{
+      if(clickOrden(e)){ renderSaldos(); return; }
+      const b = e.target.closest('[data-vacbaja]'); if(b){ const [pid,y] = b.dataset.vacbaja.split('|'); darDeBaja(pid, Number(y)); return; }
+      const c = e.target.closest('[data-vaccorr]'); if(c){ const [pid,y] = c.dataset.vaccorr.split('|'); corregirCorr(pid, Number(y)); return; }
+      const g = e.target.closest('[data-vaccargar]'); if(g) irACargar(g.dataset.vaccargar);
+    });
+    $('vacAjustesWrap').addEventListener('click', e=>{ const b = e.target.closest('[data-vacajdel]'); if(b) deshacerBaja(b.dataset.vacajdel); });
     $('vacBuscar').addEventListener('input', renderSolicitudes);
     $('vacSolWrap').addEventListener('click', e=>{ if(clickOrden(e)) renderSolicitudes(); });
     $('vacFiltroModalidad').addEventListener('change', renderSolicitudes);
@@ -5637,7 +5884,7 @@ const Vac = (function(){
     try{ $('vacLogo').src = 'data:image/png;base64,' + LOGO_SPL_BLANCO; }catch(err){}
     render();
   }
-  return { init, render };
+  return { init, render, resumenFicha };
 })();
 
 // ====== DATOS PERSONALES (DNI, CUIL, domicilio, nacimiento, contacto) ======
