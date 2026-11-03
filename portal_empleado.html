@@ -131,7 +131,6 @@ function pantallaLogin(aviso){
     <div style="padding-top:6vh">
       <div class="brand">SPL / Spotsline</div>
       <h1>Mi Spotsline</h1>
-      <p class="muted" style="margin-top:0">Tus vacaciones, recibos, préstamos y pedidos a RRHH.</p>
       <div class="card top">
         <label class="f" for="lLeg">Legajo</label>
         <input id="lLeg" inputmode="numeric" autocomplete="username" value="${esc(leg)}" placeholder="Tu número de legajo">
@@ -283,7 +282,7 @@ function vPedirVac(){
       <div class="muted small">Te quedan <b style="color:var(--yellow)">${esc(a.restante??'—')}</b> días en el ciclo ${esc(v.lbl||'')} (${esc(v.periodo||'')}).</div>
       <label class="f" for="vDesde">Desde (primer día de vacaciones)</label><input type="date" id="vDesde" min="${isoDe(man)}">
       <label class="f" for="vHasta">Hasta (último día de vacaciones)</label><input type="date" id="vHasta" min="${isoDe(man)}">
-      <div class="info" id="vDias">Elegí las fechas: los días se cuentan corridos, incluyendo sábados, domingos y feriados.</div>
+      <div class="info" id="vDias">Elegí las fechas: los días se cuentan corridos, incluyendo sábados, domingos y feriados. Mínimo 7 días.</div>
       <div id="vAlertas"></div>
       <label class="f" for="vObs">Comentario para RRHH (opcional)</label><textarea id="vObs" maxlength="300" placeholder="Ej.: si no se puede esa semana, me sirve la siguiente"></textarea>
       <button class="btn" id="vEnviar">Enviar pedido</button>
@@ -301,6 +300,7 @@ function vPedirVac(){
     if(ok!==d1) al.push(`Las vacaciones empiezan un lunes hábil. Esa semana el inicio sería el <b>${fmtF(ok)}</b>.`);
     if(a.restante!=null && dias > a.restante) al.push(`Pedís ${dias} días y te quedan ${a.restante} en el ciclo.`);
     const cy = v.ciclo; if(cy && (d1 < `${cy}-10-01` || d2 > `${cy+1}-04-30`)) al.push(`Queda fuera del período del ciclo (${esc(v.periodo)}). RRHH lo va a revisar.`);
+    if(dias < 7) al.push('Desde el portal se piden <b>7 días o más</b>. Si necesitás menos días, pedíselo a tu jefe.');
     if(dias > 45) al.push('Es un período muy largo: revisá las fechas.');
     $('#vAlertas').innerHTML = al.map(x=>`<div class="warn">⚠ ${x}</div>`).join('');
     return { desde:d1, hasta:d2, dias };
@@ -308,11 +308,12 @@ function vPedirVac(){
   $('#vDesde').onchange = calc; $('#vHasta').onchange = calc;
   $('#vEnviar').onclick = async ()=>{
     const x = calc(); if(!x){ $('#vErr').textContent = 'Elegí las fechas desde y hasta.'; return; }
+    if(x.dias < 7){ $('#vErr').textContent = 'Desde el portal se piden 7 días o más. Para menos días hablá con tu jefe.'; return; }
     if(x.dias > 60){ $('#vErr').textContent = 'Revisá las fechas: no se pueden pedir más de 60 días juntos.'; return; }
     $('#vEnviar').disabled = true; $('#vErr').textContent = '';
     try{
       const r = await rpc('rrhh_emp_pedir', { p_token:S.token, p_tipo:'vacaciones', p_datos:{ ...x, obs:$('#vObs').value.trim() } });
-      if(!r.ok){ $('#vErr').textContent = ({ pasado:'La fecha de inicio ya pasó.', fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
+      if(!r.ok){ $('#vErr').textContent = ({ pasado:'La fecha de inicio ya pasó.', minimo:'Desde el portal se piden 7 días o más.', fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
       S.vista = 'pedidos'; await recargar('Pedido enviado. RRHH te va a responder acá.');
     }catch(e){ $('#vErr').textContent = msgError(e); }
     finally{ const b = $('#vEnviar'); if(b) b.disabled = false; }
@@ -391,7 +392,7 @@ function vTramites(){
     <div class="seg" id="tSeg"><button data-t="constancia" class="on">Constancia</button><button data-t="ausencia">Avisar ausencia</button><button data-t="consulta">Consulta</button></div>
     <div class="card top" id="tForm"></div>` + pie();
   const forms = {
-    constancia: `<label class="f" for="tQue">¿Qué necesitás?</label><select id="tQue"><option>Constancia de trabajo</option><option>Certificado de trabajo y servicios</option><option>Constancia de vacaciones</option><option>Copia de recibo de sueldo</option><option>Otro</option></select>
+    constancia: `<label class="f" for="tQue">¿Qué necesitás?</label><select id="tQue"><option>Certificado de trabajo y servicios</option><option>Certificado de vacaciones</option></select>
       <label class="f" for="tPara">¿Para presentar dónde? (opcional)</label><input id="tPara" maxlength="120" placeholder="Ej.: banco, escuela, ANSES, alquiler">
       <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
     ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Esto <b>no reemplaza el certificado</b>: entregalo en RRHH.</p>
