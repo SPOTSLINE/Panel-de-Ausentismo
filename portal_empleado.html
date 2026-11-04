@@ -64,6 +64,13 @@
   .seg button.on{border-color:var(--yellow);color:var(--yellow);background:var(--yellow-dim)}
   .pie{margin-top:22px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5}
   .hide{display:none!important}
+  /* protección: sin selección de texto ni menú de mantener apretado, marca de agua y tapa al salir de la app */
+  body.seguro{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body.seguro input, body.seguro textarea, body.seguro select{-webkit-user-select:text;user-select:text}
+  #marca{position:fixed;inset:0;pointer-events:none;z-index:50;background-repeat:repeat;opacity:.09;display:none}
+  body.seguro #marca{display:block}
+  #tapa{position:fixed;inset:0;z-index:100;background:#0f0f0f;display:none;align-items:center;justify-content:center;color:var(--muted);font-size:15px;text-align:center;padding:24px}
+  body.tapado #tapa{display:flex} body.tapado .wrap{filter:blur(18px)}
   .loading{text-align:center;color:var(--muted);padding:40px 0}
   table.c{width:100%;border-collapse:collapse;font-size:13.5px} table.c th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--line)}
   table.c td{padding:7px 4px;border-bottom:1px solid var(--line)} table.c td.n,table.c th.n{text-align:right;font-family:var(--mono)}
@@ -71,6 +78,8 @@
 </head>
 <body>
 <div class="wrap" id="app"><div class="loading">Cargando…</div></div>
+<div id="marca"></div>
+<div id="tapa">🔒 Mi Spotsline<br>Tocá la pantalla para seguir</div>
 <script>
 'use strict';
 // Supabase del Panel de Paneles (clave pública). El portal solo puede llamar a las funciones rrhh_emp_*,
@@ -78,6 +87,7 @@
 const SB_URL = 'https://fzylibnqqjznaddgpsjt.supabase.co';
 const SB_KEY = 'sb_publishable_zHONcBODl6nbPiLS3TSrZw_D8MVJqeE';
 const INACTIVIDAD_MIN = 10;
+const RECIBOS_URL_DEF = 'https://rh21.com.ar/sistema/sueldosxxi/index.php/sisweb/SPOTSLINE';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -96,6 +106,7 @@ const ESTADOS = { pendiente:'Pendiente', aprobada:'Aprobado', resuelta:'Respondi
 const CAMPOS = { domicilio:'Domicilio', localidad:'Localidad', cp:'Código postal', provincia:'Provincia', tel:'Teléfono / celular', mail:'Mail', hijos:'Hijos' };
 
 const S = { token: ss.get('rrhh_tok'), clave: null, data: null, vista: 'inicio', cfg: {} };
+const recibosUrl = () => S.cfg.recibosUrl || RECIBOS_URL_DEF;
 
 async function rpc(fn, args){
   let res;
@@ -119,7 +130,7 @@ function tocarActividad(){ clearTimeout(_tInact); if(S.token) _tInact = setTimeo
 ['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev, tocarActividad, {passive:true}));
 
 async function salir(silencioso){
-  const t = S.token; S.token = null; S.data = null; S.clave = null; ss.del('rrhh_tok');
+  const t = S.token; S.token = null; S.data = null; S.clave = null; ss.del('rrhh_tok'); document.body.classList.remove('seguro','tapado');
   if(t && !silencioso) rpc('rrhh_emp_salir', { p_token:t }).catch(()=>{});
   pantallaLogin(silencioso ? 'Se cerró la sesión. Volvé a entrar.' : '');
 }
@@ -226,7 +237,7 @@ function pie(){
     <button class="btn link" style="width:auto;display:inline" onclick="mostrar('clave')">Cambiar mi clave</button></div>`;
 }
 function mostrar(v, toast){
-  S.vista = v; window.scrollTo(0,0);
+  S.vista = v; window.scrollTo(0,0); marcaDeAgua();
   const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, clave:()=>pantallaClave(false) };
   (V[v] || vInicio)();
   if(toast){ const t = document.createElement('div'); t.className = 'card'; t.style.cssText = 'border-color:var(--good);color:var(--good);font-size:14.5px'; t.textContent = toast;
@@ -247,12 +258,12 @@ function vInicio(){
       <button class="tile big" onclick="mostrar('vacaciones')"><div><div class="t">🏖️ Mis vacaciones</div><div class="s">Ciclo ${esc(v.lbl||'')} · ${esc(v.periodo||'')}</div></div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px"><div><div class="n">${act.restante!=null?esc(act.restante):'—'}</div><div class="s">días para pedir este ciclo</div></div>
         <span class="btn" style="width:auto;margin:0;padding:10px 14px;font-size:14px" onclick="event.stopPropagation();mostrar('pedirVac')">Pedir</span></div></button>
-      ${S.cfg.recibosUrl ? `<a class="tile" href="${esc(S.cfg.recibosUrl)}" target="_blank" rel="noopener"><div class="ico">🧾</div><div><div class="t">Recibos de sueldo</div><div class="s">Ir a la plataforma ↗</div></div></a>` : ''}
+      ${recibosUrl() ? `<a class="tile" href="${esc(recibosUrl())}" target="_blank" rel="noopener"><div class="ico">🧾</div><div><div class="t">Recibos de sueldo</div><div class="s">Ir a la plataforma ↗</div></div></a>` : ''}
       <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Mis pedidos</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
       <button class="tile" onclick="mostrar('tramites')"><div class="ico">📝</div><div><div class="t">Trámites</div><div class="s">Constancias, avisar una ausencia, consultas</div></div></button>
       <button class="tile" onclick="mostrar('datos')"><div class="ico">👤</div><div><div class="t">Mis datos</div><div class="s">Ver y pedir cambios</div></div></button>
       ${(e.prestamos||[]).length ? `<button class="tile" onclick="mostrar('prestamos')"><div class="ico">💵</div><div><div class="t">Préstamos</div><div class="s">${pr.length?`Saldo ${money(pr.reduce((t,p)=>t+p.saldo,0))}`:'Sin saldo pendiente'}</div></div></button>` : ''}
-    </div>` + (S.cfg.recibosUrl && S.cfg.recibosTexto ? `<div class="info">🧾 ${esc(S.cfg.recibosTexto)}</div>` : '') + pie();
+    </div>` + (recibosUrl() && S.cfg.recibosTexto ? `<div class="info">🧾 ${esc(S.cfg.recibosTexto)}</div>` : '') + pie();
 }
 
 // ---------- VACACIONES ----------
@@ -417,6 +428,27 @@ function vTramites(){
   }
   pint();
 }
+
+// ---- protección de datos en pantalla ----
+// Una página web no puede bloquear las capturas del celular. Lo que sí se hace: marca de agua con el
+// nombre, legajo, fecha y hora (toda captura queda identificada), sin copiar texto ni menú de mantener
+// apretado, y la pantalla se tapa cuando se sale de la app (vista de apps recientes / grabación).
+function marcaDeAgua(){
+  const e = S.data && S.data.empleado; const m = document.getElementById('marca');
+  if(!e){ document.body.classList.remove('seguro'); return; }
+  const d = new Date(), txt = `${nomTitulo(e.nombre)} · leg. ${e.legajo} · ${d.toLocaleDateString('es-AR')} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="170"><text x="10" y="100" transform="rotate(-25 150 85)" font-family="Arial" font-size="15" fill="#ffffff">${esc(txt)}</text></svg>`;
+  m.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+  document.body.classList.add('seguro');
+}
+const tapar = v => document.body.classList.toggle('tapado', !!v && !!S.token);
+document.addEventListener('visibilitychange', ()=>tapar(document.hidden));
+window.addEventListener('blur', ()=>tapar(true));
+window.addEventListener('pagehide', ()=>tapar(true));
+document.getElementById('tapa').addEventListener('click', ()=>tapar(false));
+window.addEventListener('focus', ()=>setTimeout(()=>tapar(false), 150));
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('seguro') && !/INPUT|TEXTAREA/.test(e.target.tagName)) e.preventDefault(); });
+setInterval(()=>{ if(S.data) marcaDeAgua(); }, 60000);
 
 // ---- arranque ----
 if(S.token){ tocarActividad(); cargarYMostrar(); } else pantallaLogin();

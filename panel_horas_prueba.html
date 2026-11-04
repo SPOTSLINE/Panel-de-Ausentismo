@@ -1270,6 +1270,16 @@
         <button class="btn small" data-calzoom="hoy">Ir a hoy</button>
         <span class="note" id="vacZoomInfo"></span>
       </div>
+      <div class="cal-filtros" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 10px;">
+        <select id="vacCalGer" style="width:auto; min-width:150px;"><option value="">Todas las áreas</option></select>
+        <select id="vacCalSec" style="width:auto; min-width:150px;"><option value="">Todos los sectores</option></select>
+        <input type="text" id="vacCalPers" placeholder="Persona o legajo..." style="width:190px;">
+        <label class="note" style="display:flex; align-items:center; gap:5px;">Desde <input type="date" id="vacCalDesde" style="width:auto;"></label>
+        <label class="note" style="display:flex; align-items:center; gap:5px;">Hasta <input type="date" id="vacCalHasta" style="width:auto;"></label>
+        <label class="chk"><input type="checkbox" id="vacCalSolo" checked> Solo quienes tienen vacaciones en esas fechas</label>
+        <button class="btn secondary small" id="vacCalLimpiar">Limpiar filtros</button>
+        <span class="note" id="vacCalInfo"></span>
+      </div>
       <div class="cal-legend">
         <span><span class="legend-swatch" style="background:var(--blue)"></span>Autorizada</span>
         <span><span class="legend-swatch" style="background:var(--amber)"></span>Autorizada con observaciones</span>
@@ -5604,6 +5614,8 @@ const Vac = (function(){
     if(it.cancelada) return esAdmin() ? `<button class="btn secondary small" data-vacreact="${it.id}">Reactivar</button> <button class="btn danger small" data-vacdel="${it.id}">Eliminar</button>` : '';
     let h = '';
     if(puedeAutorizar()) h += it.autorizo ? `<button class="btn secondary small" data-vacdesaut="${it.id}">Quitar autorización</button> ` : `<button class="btn small" data-vacaut="${it.id}">Autorizar</button> `;
+    h += `<button class="btn secondary small" data-vacform="${it.id}" title="Imprimir el formulario para firmar">📄 Formulario</button> `;
+    if(canEdit()) h += it.firmado ? `<button class="btn secondary small" data-vacfirma="${it.id}" title="Firmado: ${escHtml(it.firmado.por)} · ${fmtDisplay(String(it.firmado.fecha).slice(0,10))}" style="color:var(--good)">✓ Firmado</button> ` : `<button class="btn secondary small" data-vacfirma="${it.id}">Marcar firmado</button> `;
     if(canEdit()) h += `<button class="btn secondary small" data-vacper="${it.id}" title="Elegir de qué ciclo descuenta los días">Período${tieneCicloFijo(it)?' '+cicloLbl(Number(it.ciclo)):''}</button> `;
     if(esAdmin()) h += `<button class="btn danger small" data-vaccanc="${it.id}">Cancelar</button>`;
     return h;
@@ -5634,6 +5646,72 @@ const Vac = (function(){
     if(t){ const m = t.match(/^(\d{4})/); y = m ? Number(m[1]) : NaN; if(!ops.some(o=>o.y===y)){ alert('Ese ciclo no es válido. Usá uno de: '+ops.map(o=>o.lbl).join(', ')); return; } }
     const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(!s) return; if(y==null) delete s.ciclo; else s.ciclo = y; });
     if(ok){ registrarCambio('Vacaciones', 'Período de imputación cambiado', `${e0.nombre||s0.pid} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)} → ${y==null?'automático':cicloLbl(y)}`); render(); }
+  }
+  // ---- Formulario de Solicitud de Vacaciones (para firmar) ----
+  // Una fila por cada ciclo del que descuenta la solicitud; "Restan" = lo que queda en ese ciclo después de esta solicitud.
+  function imprimirFormulario(id){
+    const s = solicitudesTodas.find(x=>x.id===id); if(!s) return;
+    const p = PERSONAL.find(x=>x.id===s.pid); if(!p){ alert('La persona no está en el listado.'); return; }
+    const orden = (a,b)=>a.desde.localeCompare(b.desde) || String(a.id).localeCompare(String(b.id));
+    const hasta = solicitudesTodas.filter(x=>x.pid===s.pid && !x.cancelada && orden(x,s)<=0);
+    const sal = calcSaldo(p, hasta, ajustes, corrManual, cicloSol(s));
+    const imp = (sal.imput[s.id] && sal.imput[s.id].length) ? sal.imput[s.id] : [[cicloSol(s), Number(s.dias)||0]];
+    const e = v => escHtml(v==null ? '' : String(v));
+    const filas = imp.map(([y,d])=>`<tr><td>Vacaciones corresponden al AÑO: ${cicloLbl(y)}</td><td class="c">X</td><td class="c">${e(d)}</td><td class="c">${e(+(((sal.C[y]||{}).pend)||0).toFixed(1))}</td><td class="c">${fmtFechaISO(s.desde)}</td><td class="c">${fmtFechaISO(s.hasta)}</td></tr>`).join('')
+      + Array.from({length:Math.max(0,5-imp.length)}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
+    const jefe = s.autorizo ? s.autorizo.nombre : '';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Solicitud de vacaciones — ${e(p.nombre)}</title>
+    <style>
+      @page{size:A4;margin:16mm 14mm}
+      body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;font-size:12px}
+      .hoja{max-width:180mm;margin:0 auto}
+      .cab{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+      .cab img{height:62px}
+      .cab h1{font-size:15px;text-align:right;margin:8px 0 0;line-height:1.25}
+      table{width:100%;border-collapse:collapse} td,th{border:1px solid #000;padding:6px 6px;vertical-align:middle}
+      th{font-size:11.5px} .c{text-align:center} .tit{background:#d9d9d9;text-align:center;font-weight:bold;text-decoration:underline}
+      .lbl{width:118px;white-space:nowrap} .fecha{width:125px;margin-left:auto;border:1px solid #000;padding:6px;margin-bottom:-1px}
+      .txt{font-size:12.5px;line-height:1.75;padding:6px 6px}
+      .firmas td{height:30px} .acl{font-size:7px;vertical-align:top;color:#333}
+      .pie{font-size:9px;color:#666;margin-top:10px}
+      @media print{.noprint{display:none}}
+    </style></head><body><div class="hoja">
+    <div class="cab"><img src="data:image/png;base64,${LOGO_SPL_NEGRO}" alt="Spotsline"><h1>Formulario de Solicitud de<br>Vacaciones</h1></div>
+    <div class="fecha">Fecha: ${new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+    <table>
+      <tr><td colspan="4" class="tit">DATOS PERSONALES</td></tr>
+      <tr><td class="lbl">Apellido y Nombre:</td><td colspan="3">${e(p.nombre)}</td></tr>
+      <tr><td class="lbl">Legajo:</td><td>${e(p.legajo)}</td><td class="lbl">Puesto:</td><td>${e(tituloCaso(p.sector||''))}</td></tr>
+      <tr><td class="lbl">Área:</td><td>${e(tituloCaso(p.gerencia||''))}</td><td class="lbl">Jefe Inmediato:</td><td>${e(jefe)}</td></tr>
+    </table>
+    <p style="margin:10px 4px 6px">Solicito hacer uso de los días de licencia por:</p>
+    <table>
+      <tr><th>Tipo de Licencia</th><th style="width:28px">X</th><th style="width:52px">Cantidad de días</th><th style="width:48px">Restan</th><th style="width:66px">Fecha Comienzo</th><th style="width:70px">Fecha Finalización</th></tr>
+      ${filas}
+      <tr><td colspan="6" class="txt">Las vacaciones deberán tomarse dentro del período comprendido entre el 1ero de octubre y el 30 de abril del año siguiente. Las vacaciones que no se gocen dentro del periodo comprendido anteriormente se tomaran como gozadas siendo liquidadas en el periodo Abril del año correspondiente.<br>Las licencias por vacaciones comenzaran un día Lunes o en el caso de ser feriado el día hábil consecutivo, el mínimo de goce es de 7 días.</td></tr>
+      <tr><td colspan="6">&nbsp;${s.obs?e(s.obs):''}</td></tr>
+      <tr><td colspan="6" class="tit">FIRMAS AUTORIZANTES</td></tr>
+    </table>
+    <table class="firmas" style="margin-top:-1px">
+      <tr><td style="width:30%">Colaborador Solicitante</td><td style="width:33%"></td><td class="acl">ACLARACIÓN</td></tr>
+      <tr><td>Responsable Inmediato</td><td></td><td class="acl">ACLARACIÓN</td></tr>
+      <tr><td>Recursos Humanos</td><td></td><td class="acl">ACLARACIÓN</td></tr>
+    </table>
+    <div class="pie">Impreso desde el Panel de RRHH el ${new Date().toLocaleString('es-AR')}${s.autorizo?` · autorizada por ${e(s.autorizo.nombre)} el ${fmtDisplay(String(s.autorizo.fecha).slice(0,10))}`:' · pendiente de autorización'}.</div>
+    </div><script>window.onload=()=>{ window.print(); }<\/script></body></html>`;
+    const w = window.open('', '_blank');
+    if(!w){ alert('El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para este sitio.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    registrarCambio('Vacaciones', 'Formulario de vacaciones impreso', `${p.nombre} · ${fmtDisplay(s.desde)} a ${fmtDisplay(s.hasta)}`);
+  }
+  function imprimirPorRef(ref){ const s = solicitudesTodas.find(x=>x.solRef===ref && !x.cancelada); if(s) imprimirFormulario(s.id); }
+  async function marcarFirmado(id){
+    const s0 = solicitudesTodas.find(x=>x.id===id); if(!s0 || !canEdit()) return;
+    const e0 = PERSONAL.find(x=>x.id===s0.pid) || {};
+    const quitar = !!s0.firmado;
+    if(!confirm(quitar ? `¿Quitar la marca de formulario firmado de ${e0.nombre}?` : `¿Marcar que ${e0.nombre} firmó el formulario de vacaciones (${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)})?`)) return;
+    const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(!s) return; if(quitar) delete s.firmado; else s.firmado = { por:ACCESO.usuario.nombre, fecha:new Date().toISOString() }; });
+    if(ok){ registrarCambio('Vacaciones', quitar ? 'Formulario: se quitó la marca de firmado' : 'Formulario de vacaciones firmado', `${e0.nombre||s0.pid} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}`); render(); }
   }
   function renderMini(id){
     const wrap = $('vacMiniList');
@@ -5668,12 +5746,13 @@ const Vac = (function(){
     const al = alertasDe({pid, desde, hasta, dias, fraccion, ciclo: ($('vacCicloImp') && $('vacCicloImp').value) ? Number($('vacCicloImp').value) : undefined});
     if(al.length && jefe && !confirm(`Esta solicitud tiene observaciones:\n\n• ${al.join('\n• ')}\n\n¿La autorizás igual? Queda registrado a tu nombre con la observación.`)) return;
     const autorizo = jefe ? { nombre:jefe, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
-    const cicloElegido = $('vacCicloImp') ? $('vacCicloImp').value : '';
-    const ok = await mutar(d=>{ const nueva = { id:uid(), pid, desde, hasta, dias, obs, alertaFecha, autorizo }; if(cicloElegido) nueva.ciclo = Number(cicloElegido); if(fraccion){ nueva.fraccion = true; nueva.fraccionPor = ACCESO.usuario.nombre; } d.solicitudes.push(nueva); });
+    const cicloElegido = $('vacCicloImp') ? $('vacCicloImp').value : ''; let nuevaId = null;
+    const ok = await mutar(d=>{ const nueva = { id:uid(), pid, desde, hasta, dias, obs, alertaFecha, autorizo }; nuevaId = nueva.id; if(cicloElegido) nueva.ciclo = Number(cicloElegido); if(fraccion){ nueva.fraccion = true; nueva.fraccionPor = ACCESO.usuario.nombre; } d.solicitudes.push(nueva); });
     if(!ok) return;
     registrarCambio('Vacaciones', 'Solicitud cargada', `${(empById(pid)||{}).nombre||pid} · ${fmtDisplay(desde)} a ${fmtDisplay(hasta)} (${dias} días)${jefe?' · autorizó '+jefe:' · falta autorización'}${al.length?' · obs: '+al.join(' / '):''}${obs?' · '+obs:''}`);
     msg(!jefe ? 'Solicitud agregada. Queda pendiente de autorización del jefe.' : (al.length ? `Solicitud agregada y autorizada por ${jefe} con observaciones.` : `Solicitud agregada y autorizada por ${jefe}.`), !jefe || al.length>0);
     $('vacObs').value=''; $('vacAutAhora').checked=false; if($('vacCicloImp')) $('vacCicloImp').value=''; if($('vacFracc')) $('vacFracc').checked=false; render();
+    if(jefe && nuevaId && confirm('Solicitud autorizada. ¿Imprimir el formulario para que lo firme?')) imprimirFormulario(nuevaId);
   }
 
   async function autorizar(id, silencioso){
@@ -5687,7 +5766,7 @@ const Vac = (function(){
     }
     const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(s) s.autorizo = { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al, obs:obsJ }; });
     if(ok) registrarCambio('Vacaciones', 'Solicitud autorizada', `${e0.nombre} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}${al.length?' · obs: '+al.join(' / '):''}${obsJ?' · '+obsJ:''}`);
-    if(ok && !silencioso) render();
+    if(ok && !silencioso){ render(); if(confirm('Vacaciones autorizadas. ¿Imprimir el formulario para que lo firme?')) imprimirFormulario(id); }
     return ok;
   }
   async function quitarAutorizacion(id){
@@ -5798,7 +5877,19 @@ const Vac = (function(){
     const ppd = ZOOM.ppd, W = Math.round(totalDays*ppd);
     const prevScroll = (wrap.firstElementChild && wrap.firstElementChild.scrollLeft) || 0, prevPpd = ZOOM._ultimo || ppd;
     const threshold = Number($('vacThreshold').value || 1);
-    const sectors = {}; empleados().forEach(e=>{ (sectors[e.sector] = sectors[e.sector]||[]).push(e); });
+    // filtros: área (gerencia), sector, persona y fechas
+    const F = { ger:$('vacCalGer').value, sec:$('vacCalSec').value, q:($('vacCalPers').value||'').toLowerCase().trim(), d:$('vacCalDesde').value, h:$('vacCalHasta').value, solo:$('vacCalSolo').checked };
+    const todos = empleados();
+    const opts = (sel, vals, todosTxt) => { const v = sel.value; sel.innerHTML = `<option value="">${todosTxt}</option>` + vals.map(x=>`<option ${x===v?'selected':''}>${escHtml(x)}</option>`).join(''); };
+    opts($('vacCalGer'), [...new Set(todos.map(e=>e.gerencia).filter(Boolean))].sort(), 'Todas las áreas');
+    opts($('vacCalSec'), [...new Set(todos.filter(e=>!F.ger || e.gerencia===F.ger).map(e=>e.sector).filter(Boolean))].sort(), 'Todos los sectores');
+    if(F.sec && !$('vacCalSec').value) F.sec = '';
+    const enRango = s => (!F.d || s.hasta >= F.d) && (!F.h || s.desde <= F.h);
+    const lista = todos.filter(e=>(!F.ger || e.gerencia===F.ger) && (!F.sec || e.sector===F.sec) && (!F.q || `${e.nombre} ${e.legajo}`.toLowerCase().includes(F.q)))
+      .filter(e=>!(F.solo && (F.d || F.h)) || solicitudes.some(s=>s.pid===e.id && enRango(s)));
+    const filtrando = F.ger || F.sec || F.q || F.d || F.h;
+    $('vacCalInfo').textContent = filtrando ? `${lista.length} de ${todos.length} persona(s)` + ((F.d && (F.d < fmtDateISO(PERIOD_START) || F.d > fmtDateISO(PERIOD_END))) ? ' · la fecha "desde" es de otro ciclo: cambiá el ciclo arriba' : '') : '';
+    const sectors = {}; lista.forEach(e=>{ (sectors[e.sector] = sectors[e.sector]||[]).push(e); });
     const names = Object.keys(sectors).sort();
     const idx = d => Math.round((d-PERIOD_START)/86400000);
     const hoy = new Date(); hoy.setHours(0,0,0,0); const iHoy = idx(hoy);
@@ -5822,6 +5913,8 @@ const Vac = (function(){
     for(let i=0;i<totalDays;i++){ const d = new Date(PERIOD_START); d.setDate(d.getDate()+i); const dow=d.getDay(); if(dow===0||dow===6||feriados.includes(fmtDateISO(d))) fondos.push(i); }
     const bg = `<div style="position:absolute; inset:0; pointer-events:none;">${fondos.map(i=>`<div style="position:absolute; top:0; bottom:0; left:${i*ppd}px; width:${ppd}px; background:rgba(255,255,255,.035)"></div>`).join('')}${ppd>=10?`<div style="position:absolute; inset:0; background-image:repeating-linear-gradient(to right, transparent 0, transparent ${ppd-1}px, rgba(255,255,255,.05) ${ppd-1}px, rgba(255,255,255,.05) ${ppd}px);"></div>`:''}</div>`;
     const lineaHoy = (iHoy>=0 && iHoy<totalDays) ? `<div class="hoyline" style="left:${iHoy*ppd + ppd/2}px"></div>` : '';
+    const rI = F.d ? Math.max(0, idx(parseISO(F.d))) : 0, rF = F.h ? Math.min(totalDays-1, idx(parseISO(F.h))) : totalDays-1;
+    const rango = (F.d || F.h) && rF >= rI ? `<div style="position:absolute; top:0; bottom:0; left:${rI*ppd}px; width:${(rF-rI+1)*ppd}px; background:rgba(245,196,0,.10); border-left:1px solid rgba(245,196,0,.5); border-right:1px solid rgba(245,196,0,.5); pointer-events:none;"></div>` : '';
     let html = `<div class="cal2"><div class="cab">
       <div class="fila" style="border-top:0"><div class="lbl" style="font-weight:650">Sector / persona</div><div class="dias" style="width:${W}px; height:28px">${meses}</div></div>
       <div class="fila"><div class="lbl note">${ppd>=14?'Día':''}</div><div class="dias" style="width:${W}px; height:${ppd>=22?34:22}px">${dias}</div></div></div>`;
@@ -5834,7 +5927,7 @@ const Vac = (function(){
       const maxOv = Math.max(0, ...dayCount);
       html += `<div class="fila sec"><div class="lbl sec">${escHtml(sec)} <span style="color:var(--muted); font-weight:400;">(${emps.length})</span>${maxOv>threshold?` <span class="warn-chip" style="color:var(--danger)">⚠ hasta ${maxOv} el mismo día</span>`:''}</div><div class="track2" style="width:${W}px; height:26px">${bg}${lineaHoy}</div></div>`;
       emps.forEach(e=>{
-        html += `<div class="fila"><div class="lbl">${nombreConEstado(e)}</div><div class="track2" style="width:${W}px">${bg}${lineaHoy}`;
+        html += `<div class="fila"><div class="lbl">${nombreConEstado(e)}</div><div class="track2" style="width:${W}px">${bg}${rango}${lineaHoy}`;
         solicitudes.filter(s=>s.pid===e.id).forEach(s=>{
           const si = Math.max(0, idx(parseISO(s.desde))), ei = Math.min(totalDays-1, idx(parseISO(s.hasta)));
           if(ei<0 || si>totalDays-1) return;
@@ -5848,7 +5941,9 @@ const Vac = (function(){
     });
     wrap.innerHTML = html + `</div>`;
     const sc = wrap.firstElementChild;
-    sc.scrollLeft = ZOOM._irHoy ? Math.max(0, iHoy*ppd - (sc.clientWidth-LBL_W)/2) : prevScroll * (ppd/prevPpd);
+    sc.scrollLeft = ZOOM._irHoy ? Math.max(0, iHoy*ppd - (sc.clientWidth-LBL_W)/2) : (ZOOM._irRango && F.d) ? Math.max(0, rI*ppd - 20) : prevScroll * (ppd/prevPpd);
+    ZOOM._irRango = false;
+    if(!names.length) wrap.querySelector('.cal2').insertAdjacentHTML('beforeend', '<div class="empty">Nadie coincide con los filtros elegidos.</div>');
     ZOOM._irHoy = false; ZOOM._ultimo = ppd;
     $('vacZoomInfo').textContent = ppd>=60 ? 'vista por semana' : ppd>=20 ? 'vista por mes' : ppd>=8 ? 'vista por quincena' : 'vista del período';
   }
@@ -6105,6 +6200,8 @@ const Vac = (function(){
     const accionesSol = e=>{
       const a = e.target.closest('[data-vacaut]'); if(a){ autorizar(a.dataset.vacaut); return true; }
       const per = e.target.closest('[data-vacper]'); if(per){ cambiarPeriodo(per.dataset.vacper); return true; }
+      const fo = e.target.closest('[data-vacform]'); if(fo){ imprimirFormulario(fo.dataset.vacform); return true; }
+      const fi = e.target.closest('[data-vacfirma]'); if(fi){ marcarFirmado(fi.dataset.vacfirma); return true; }
       const q = e.target.closest('[data-vacdesaut]'); if(q){ quitarAutorizacion(q.dataset.vacdesaut); return true; }
       const c = e.target.closest('[data-vaccanc]'); if(c){ cancelarSolicitudes([c.dataset.vaccanc]); return true; }
       const r = e.target.closest('[data-vacreact]'); if(r){ reactivar(r.dataset.vacreact); return true; }
@@ -6123,6 +6220,10 @@ const Vac = (function(){
     $('vacKpis').addEventListener('click', e=>{ const k = e.target.closest('[data-vackpi]'); if(!k) return; VAC_VIEW.estado = (VAC_VIEW.estado===k.dataset.vackpi) ? '' : k.dataset.vackpi; renderKPIs(); setSub('solicitudes'); });
     $('vacFiltroEstado').addEventListener('change', e=>{ VAC_VIEW.estado = e.target.value; renderKPIs(); renderSolicitudes(); });
     document.querySelectorAll('[data-calzoom]').forEach(b=>b.addEventListener('click', ()=>zoom(b.dataset.calzoom)));
+    ['vacCalGer','vacCalSec','vacCalSolo'].forEach(id=>$(id).addEventListener('change', renderCalendario));
+    $('vacCalPers').addEventListener('input', renderCalendario);
+    ['vacCalDesde','vacCalHasta'].forEach(id=>$(id).addEventListener('change', ()=>{ ZOOM._irRango = true; renderCalendario(); }));
+    $('vacCalLimpiar').addEventListener('click', ()=>{ ['vacCalGer','vacCalSec','vacCalPers','vacCalDesde','vacCalHasta'].forEach(id=>$(id).value=''); $('vacCalSolo').checked = true; renderCalendario(); });
     window.addEventListener('resize', ()=>{ if($('vtab-calendario').classList.contains('active') && ZOOM.preset && !ZOOM._manual) { ZOOM.ppd = 0; renderCalendario(); } });
     try{ $('vacLogo').src = 'data:image/png;base64,' + LOGO_SPL_BLANCO; }catch(err){}
     render();
@@ -6165,7 +6266,7 @@ const Vac = (function(){
     if(uiOk) render();
     return true;
   }
-  return { init, render, resumenFicha, asegurar, feriadosActuales, alertasPara, saldoDe, resumenPortal, agregarExterna, htmlOpcionesCiclo };
+  return { init, render, resumenFicha, asegurar, feriadosActuales, alertasPara, saldoDe, resumenPortal, agregarExterna, htmlOpcionesCiclo, imprimirPorRef };
 })();
 
 // ====== DATOS PERSONALES (DNI, CUIL, domicilio, nacimiento, contacto) ======
@@ -7739,6 +7840,7 @@ function renderTabsNuevas(){
 // =====================================================================
 const PORTAL_ROW_ID = 'rrhh_portal_v1', BLANQ_ROW_ID = 'rrhh_blanqueos_v1', PREST_ROW_ID = 'prestamos_v1';
 const PORTAL_URL = 'https://spotsline.github.io/Panel-de-Ausentismo/portal_empleado.html';
+const PORTAL_RECIBOS_DEF = 'https://rh21.com.ar/sistema/sueldosxxi/index.php/sisweb/SPOTSLINE';
 const TIPOS_PEDIDO = { vacaciones:'Vacaciones', datos:'Cambio de datos personales', constancia:'Constancia / certificado', ausencia:'Aviso de ausencia', consulta:'Consulta a RRHH' };
 const ESTADOS_PEDIDO = { pendiente:'Pendiente', aprobada:'Aprobada', resuelta:'Respondida', rechazada:'Rechazada', cancelada:'Cancelada por el empleado' };
 // campos que el empleado puede pedir cambiar (el resto los corrige RRHH a mano)
@@ -8105,7 +8207,7 @@ const PortalRRHH = (function(){
   }
   function renderConfig(){
     const c = (PORTAL && PORTAL.config) || {};
-    $('portalRecibosUrl').value = c.recibosUrl || ''; $('portalRecibosTexto').value = c.recibosTexto || ''; $('portalContacto').value = c.contacto || '';
+    $('portalRecibosUrl').value = c.recibosUrl || PORTAL_RECIBOS_DEF; $('portalRecibosTexto').value = c.recibosTexto || ''; $('portalContacto').value = c.contacto || '';
     const hoy = new Date().toISOString().slice(0,10);
     const av = (c.avisos||[]).slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
     $('portalAvisos').innerHTML = av.length ? `<table><tr><th>Aviso</th><th>Hasta</th><th></th></tr>${av.map(a=>`<tr ${a.hasta && a.hasta<hoy?'style="opacity:.5"':''}><td>${escHtml(a.texto)}</td><td class="mono">${a.hasta?rhFecha(a.hasta):'sin fecha'}${a.hasta && a.hasta<hoy?' (vencido)':''}</td><td><button class="btn secondary small" data-pavdel="${a.id}">Quitar</button></td></tr>`).join('')}</table>` : '<div class="empty-hint">No hay avisos.</div>';
@@ -8149,6 +8251,7 @@ const PortalRRHH = (function(){
       if(await guardarPedido(id, { estado:'aprobada', ...resuelto(nota || (aut ? 'Autorizadas.' : 'Cargadas en vacaciones; falta la firma del jefe.')) })){
         registrarCambio('Portal del empleado', 'Vacaciones aprobadas', `${per.nombre} · ${rhFecha(d.desde)} a ${rhFecha(d.hasta)}${aut?' · autorizadas':''}`);
         portalProgramarPublicacion();
+        if(aut && confirm('Vacaciones autorizadas. ¿Imprimir el formulario para que lo firme?')) Vac.imprimirPorRef(id);
       }
     } else if(p.tipo==='datos'){
       const camp = {}; Object.entries(d.campos||{}).forEach(([k,v])=>{ if(CAMPOS_PORTAL.includes(k)) camp[k] = String(v).trim().slice(0,200); });
