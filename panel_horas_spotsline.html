@@ -3,7 +3,7 @@
 <head>
 <script src="/Paneldepaneles/candado.js" data-panel="ausentismo"></script>
 <meta charset="UTF-8">
-<title>Panel de Horas — SPOTSLINE SRL</title>
+<title>Panel de RRHH — SPOTSLINE SRL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -816,6 +816,43 @@
   .pan-cumple.hoy .d{color:#8fc27a;}
   .pan-cumple.paso{opacity:.55;}
   nav.tabs{flex-wrap:wrap;} .tabs-left{flex-wrap:wrap;}
+
+  /* ====== Portal del empleado (lado RRHH) y Préstamos ====== */
+  .rh .card{background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin-bottom:14px;}
+  .rh .card h3{margin:0 0 8px; font-size:14px; font-weight:650;}
+  .rh .field{margin-bottom:10px;} .rh .field label{display:block; font-size:11.5px; color:var(--muted); margin-bottom:5px;}
+  .rh select, .rh input[type=date], .rh input[type=number], .rh input[type=text], .rh input[type=month], .rh input[type=url], .rh textarea{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:5px; padding:8px 10px; font-family:var(--sans); font-size:13px; box-sizing:border-box;}
+  .rh textarea{min-height:60px; resize:vertical;}
+  .rh .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;} .rh .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .rh .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:10px;}
+  @media (max-width:760px){ .rh .grid2,.rh .grid3,.rh .grid4{grid-template-columns:1fr;} }
+  .rh table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .rh th{text-align:left; font-size:11px; color:var(--muted); padding:7px 9px; border-bottom:1px solid var(--line); font-weight:600; position:static;}
+  .rh td{padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top;}
+  .rh .mono{font-family:var(--mono);} .rh .muted{color:var(--muted);}
+  .rh .btn.small{padding:5px 10px; font-size:12px;}
+  .rh .btn.danger{background:transparent; color:var(--danger); border:1px solid var(--danger);}
+  .rh .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px;} .rh .toolbar .search{max-width:260px;}
+  .rh .subtabs{display:flex; gap:6px; margin:6px 0 16px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .rh .sub-btn{background:none; border:none; color:var(--muted); font-family:var(--sans); font-size:13px; padding:9px 14px; cursor:pointer; border-bottom:2px solid transparent;}
+  .rh .sub-btn.active{color:var(--text); border-bottom-color:var(--amber);}
+  .rh .subpanel{display:none;} .rh .subpanel.active{display:block;}
+  .rh .ped{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--amber); border-radius:8px; padding:12px 14px; margin-bottom:10px;}
+  .rh .ped.cerrado{border-left-color:var(--line); opacity:.8;}
+  .rh .ped-head{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline;}
+  .rh .ped-head b{font-size:13.5px;} .rh .ped-body{font-size:12.5px; margin:8px 0; line-height:1.55;}
+  .rh .ped-acc{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .rh .est{display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; background:var(--panel-2); border:1px solid var(--line); color:var(--muted);}
+  .rh .est.pendiente{color:var(--amber); border-color:rgba(245,196,0,.45);} .rh .est.aprobada,.rh .est.resuelta,.rh .est.vigente{color:var(--good); border-color:var(--good);}
+  .rh .est.rechazada,.rh .est.anulado{color:var(--danger); border-color:var(--danger);} .rh .est.cancelado{color:var(--muted);}
+  .rh .alerta{color:#f0c27a; font-size:12px;} .rh .cambio-old{color:var(--muted); text-decoration:line-through;} .rh .cambio-new{color:var(--good); font-weight:600;}
+  .tab-badge{display:inline-block; min-width:16px; padding:0 5px; margin-left:5px; border-radius:9px; background:var(--danger); color:#fff; font-size:10.5px; font-weight:700; line-height:16px; text-align:center;}
+  .tab-badge:empty{display:none;}
+  body.sin-editar-prestamos .solo-prestamos{display:none !important;}
+  body.sin-portal .solo-portal{display:none !important;}
+  body[data-tab="portal"] #kpiRow, body[data-tab="portal"] .shared-filters, body[data-tab="portal"] main > .assumptions,
+  body[data-tab="prestamos"] #kpiRow, body[data-tab="prestamos"] .shared-filters, body[data-tab="prestamos"] main > .assumptions{display:none !important;}
 </style>
 </head>
 <body class="auth-pending">
@@ -824,7 +861,7 @@
 <header>
   <div class="brand">
     <span class="logo-badge"><img id="brandLogo" alt="SPOTSLINE"></span>
-    <h1>Panel de Control de Horas</h1>
+    <h1>Panel de RRHH</h1>
   </div>
   <div style="text-align:right">
     <div class="period" id="periodLabel"></div>
@@ -847,6 +884,8 @@
     <button class="tab-btn" data-tab="polivalencia">Polivalencia</button>
     <button class="tab-btn" data-tab="pantalla">Pantalla</button>
     <button class="tab-btn" data-tab="documentacion">Documentación</button>
+    <button class="tab-btn" data-tab="portal">Portal del empleado</button>
+    <button class="tab-btn" data-tab="prestamos">Préstamos</button>
     <button class="tab-btn" data-tab="usuarios" hidden>Usuarios</button>
     <button class="tab-btn" data-tab="registro" hidden>Registro</button>
   </div>
@@ -1158,6 +1197,9 @@
             <div class="field"><label>Días (calculado, editable)</label><input type="number" id="vacDias" min="1" step="1"></div>
             <div class="field"><label>Observación (opcional)</label><input type="text" id="vacObs" placeholder="ej: primera tanda"></div>
           </div>
+          <div class="field"><label>Período al que se imputa (de qué ciclo descuenta los días)</label><select id="vacCicloImp"></select>
+            <div class="note" id="vacCicloImpNota" style="margin:4px 0 0;">Automático: usa primero el pendiente más viejo. Si elegís un ciclo, descuenta todo de ese ciclo.</div></div>
+          <label class="chk" id="vacFraccWrap" style="margin:4px 0 6px; display:none;"><input type="checkbox" id="vacFracc"> <span>Fraccionadas por la jefatura (menos de 7 días o inicio entre semana): no se marca como alerta</span></label>
           <label class="chk" id="vacAutWrap" style="margin:4px 0 10px; display:none;"><input type="checkbox" id="vacAutAhora"> <span id="vacAutLbl">Autorizar ahora</span></label>
           <div class="note" id="vacAutNota" style="margin-bottom:10px;">Queda pendiente hasta que la autorice un jefe (usuario con permiso "Autorizar vacaciones").</div>
           <button class="btn" id="vacBtnAgregar">Agregar solicitud</button>
@@ -1227,6 +1269,16 @@
         <button class="btn secondary small" data-calzoom="mas" title="Acercar">+</button>
         <button class="btn small" data-calzoom="hoy">Ir a hoy</button>
         <span class="note" id="vacZoomInfo"></span>
+      </div>
+      <div class="cal-filtros" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 10px;">
+        <select id="vacCalGer" style="width:auto; min-width:150px;"><option value="">Todas las áreas</option></select>
+        <select id="vacCalSec" style="width:auto; min-width:150px;"><option value="">Todos los sectores</option></select>
+        <input type="text" id="vacCalPers" placeholder="Persona o legajo..." style="width:190px;">
+        <label class="note" style="display:flex; align-items:center; gap:5px;">Desde <input type="date" id="vacCalDesde" style="width:auto;"></label>
+        <label class="note" style="display:flex; align-items:center; gap:5px;">Hasta <input type="date" id="vacCalHasta" style="width:auto;"></label>
+        <label class="chk"><input type="checkbox" id="vacCalSolo" checked> Solo quienes tienen vacaciones en esas fechas</label>
+        <button class="btn secondary small" id="vacCalLimpiar">Limpiar filtros</button>
+        <span class="note" id="vacCalInfo"></span>
       </div>
       <div class="cal-legend">
         <span><span class="legend-swatch" style="background:var(--blue)"></span>Autorizada</span>
@@ -1492,6 +1544,121 @@
       <div id="docsVisor"></div>
     </div>
   </section>
+
+  <section id="tab-portal" class="tabpanel rh" style="display:none">
+    <div class="panel-head">
+      <div>
+        <h2>Portal del empleado</h2>
+        <div class="note">Lo que pide cada empleado desde su celular (vacaciones, cambio de datos, constancias, avisos de ausencia y consultas). Acá se autoriza o se rechaza; lo aprobado pasa solo a Vacaciones o a Datos personales.</div>
+      </div>
+      <div class="actions">
+        <span class="note mono" id="portalEstadoPub"></span>
+        <button class="btn secondary" id="portalBtnRefrescar">↻ Actualizar</button>
+        <button class="btn secondary solo-portal" id="portalBtnPublicar" title="Vuelve a calcular lo que ve cada empleado (saldos, préstamos, datos)">Publicar al portal</button>
+        <a class="btn secondary" id="portalBtnAbrir" target="_blank" rel="noopener" style="text-decoration:none">Abrir el portal ↗</a>
+      </div>
+    </div>
+    <div class="kpis" id="portalKpis"></div>
+    <div class="subtabs">
+      <button class="sub-btn active" data-psub="pedidos">Pedidos</button>
+      <button class="sub-btn solo-portal" data-psub="config">Recibos, avisos y contacto</button>
+      <button class="sub-btn solo-portal" data-psub="claves">Claves de acceso</button>
+    </div>
+    <div class="subpanel active" id="psub-pedidos">
+      <div class="toolbar">
+        <input type="text" class="search" id="portalBuscar" placeholder="Buscar por nombre o legajo...">
+        <select id="portalFiltroEstado" style="max-width:200px"><option value="pendiente">Pendientes</option><option value="cerrados">Resueltos / rechazados</option><option value="">Todos</option></select>
+        <select id="portalFiltroTipo" style="max-width:220px"><option value="">Todos los tipos</option></select>
+        <span class="note" id="portalInfo"></span>
+      </div>
+      <div id="portalLista"></div>
+    </div>
+    <div class="subpanel" id="psub-config">
+      <div class="card">
+        <h3>Recibos de sueldo</h3>
+        <div class="note" style="margin-bottom:10px">El empleado ve un botón que lo lleva a la plataforma de recibos. Si se deja vacío, el botón no aparece.</div>
+        <div class="grid2">
+          <div class="field"><label>Link de la plataforma de recibos</label><input type="url" id="portalRecibosUrl" placeholder="https://..."></div>
+          <div class="field"><label>Texto de ayuda (opcional)</label><input type="text" id="portalRecibosTexto" placeholder="Ej.: entrás con tu CUIL y la clave que te llegó por mail"></div>
+        </div>
+        <h3 style="margin-top:8px">Contacto de RRHH</h3>
+        <div class="field"><input type="text" id="portalContacto" placeholder="Ej.: RRHH — interno 214 · rrhh@spotsline.com.ar · lunes a viernes de 8 a 16"></div>
+        <button class="btn" id="portalBtnGuardarCfg">Guardar</button> <span class="note" id="portalCfgMsg"></span>
+      </div>
+      <div class="card">
+        <h3>Avisos para el personal</h3>
+        <div class="note" style="margin-bottom:10px">Aparecen arriba de todo en el portal hasta la fecha que pongas (ej.: cierre de vacaciones, entrega de ropa, feriados).</div>
+        <div class="grid3">
+          <div class="field" style="grid-column:span 2"><label>Aviso</label><input type="text" id="portalAvisoTxt" maxlength="300"></div>
+          <div class="field"><label>Mostrar hasta</label><input type="date" id="portalAvisoHasta"></div>
+        </div>
+        <button class="btn secondary" id="portalBtnAviso">+ Agregar aviso</button>
+        <div id="portalAvisos" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div class="subpanel" id="psub-claves">
+      <div class="card">
+        <h3>Cómo entra el empleado</h3>
+        <div class="note" style="line-height:1.6">Usuario: su <b>legajo</b>. Clave: la primera vez, su <b>DNI</b> (solo números, como figura en Datos personales). Al entrar el portal le pide elegir un <b>PIN propio de 4 a 8 números</b>. Si se lo olvida, blanqueale la clave acá: vuelve a entrar con el DNI y elige uno nuevo. Con 5 intentos fallidos el legajo queda bloqueado 15 minutos.<br>
+        Para que alguien pueda entrar tiene que estar activo, tener legajo y DNI (o CUIL) cargado. Las claves se guardan encriptadas: nadie en la empresa las puede ver.</div>
+      </div>
+      <div class="card">
+        <h3>Blanquear clave</h3>
+        <div class="grid2"><div class="field"><select id="portalSelBlanq"></select></div><div><button class="btn" id="portalBtnBlanq">Blanquear clave</button></div></div>
+        <div id="portalSinDni" style="margin-top:10px"></div>
+        <div id="portalBlanqLista" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tab-prestamos" class="tabpanel rh" style="display:none">
+    <div class="panel-head">
+      <div>
+        <h2>Préstamos al personal</h2>
+        <div class="note">Registro de préstamos otorgados y su devolución en cuotas (descuento por liquidación o pago directo). El empleado ve su saldo en el portal.</div>
+      </div>
+      <div class="actions">
+        <button class="btn secondary" id="prestBtnExportar">Exportar a Excel</button>
+      </div>
+    </div>
+    <div class="kpis" id="prestKpis"></div>
+    <div class="card solo-prestamos">
+      <h3>Nuevo préstamo</h3>
+      <div class="grid4">
+        <div class="field" style="grid-column:span 2"><label>Empleado</label><select id="prestEmp"></select></div>
+        <div class="field"><label>Fecha de otorgamiento</label><input type="date" id="prestFecha"></div>
+        <div class="field"><label>Monto ($)</label><input type="number" id="prestMonto" min="0" step="0.01"></div>
+        <div class="field"><label>Cantidad de cuotas</label><input type="number" id="prestCuotas" min="1" step="1" value="1"></div>
+        <div class="field"><label>Valor de la cuota ($)</label><input type="number" id="prestCuota" min="0" step="0.01"></div>
+        <div class="field"><label>Primer descuento (mes de liquidación)</label><input type="month" id="prestInicio"></div>
+        <div class="field"><label>Motivo / observación</label><input type="text" id="prestObs" maxlength="200"></div>
+      </div>
+      <button class="btn" id="prestBtnAgregar">Registrar préstamo</button> <span class="note" id="prestMsg"></span>
+    </div>
+    <div class="card solo-prestamos">
+      <h3>Descuentos del mes</h3>
+      <div class="toolbar" style="margin-bottom:6px">
+        <label class="note">Liquidación de <input type="month" id="prestPeriodo" style="width:auto"></label>
+        <button class="btn secondary small" id="prestBtnDescExcel">Bajar listado (Excel)</button>
+        <button class="btn small" id="prestBtnDescReg">Registrar estos descuentos como cobrados</button>
+      </div>
+      <div id="prestDescuentos"></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" class="search" id="prestBuscar" placeholder="Buscar por nombre o legajo...">
+      <select id="prestFiltro" style="max-width:200px"><option value="vigente">Vigentes</option><option value="cancelado">Cancelados (pagados)</option><option value="anulado">Anulados</option><option value="">Todos</option></select>
+      <span class="note" id="prestInfo"></span>
+    </div>
+    <div class="table-wrap" style="max-height:none"><div id="prestLista"></div></div>
+  </section>
+
+  <div class="overlay" id="overlayRH">
+    <div class="modal rh" style="max-width:640px">
+      <div class="modal-head"><h3 id="rhModalTit"></h3><button class="btn secondary small" id="rhModalCerrar">Cerrar</button></div>
+      <div id="rhModalCuerpo"></div>
+    </div>
+  </div>
+
 
   <div class="assumptions">
     <strong>Reglas actualizadas:</strong>
@@ -4073,6 +4240,8 @@ const TABS_DEF = [
   {id:'polivalencia', label:'Polivalencia'},
   {id:'pantalla',     label:'Pantalla (TV de planta)'},
   {id:'documentacion', label:'Documentación (reglamentos)'},
+  {id:'portal',       label:'Portal del empleado (pedidos)'},
+  {id:'prestamos',    label:'Préstamos'},
 ];
 const TAB_IDS = TABS_DEF.map(t=>t.id);
 const ACCIONES_DEF = [
@@ -4087,6 +4256,8 @@ const ACCIONES_DEF = [
   {id:'polivalencia',label:'Editar la matriz de polivalencia (niveles, personas y tareas)'},
   {id:'pantalla',   label:'Publicar avisos y configurar la pantalla de planta'},
   {id:'documentos', label:'Subir y ocultar documentos de consulta'},
+  {id:'portal',     label:'Portal del empleado: responder pedidos, avisos, link de recibos y blanquear claves'},
+  {id:'prestamos',  label:'Registrar préstamos al personal y sus cobros'},
 ];
 const EMPRESAS_DEF = ['SPOTSLINE SRL','SPL DISTRIBUIDORA'];
 const USUARIOS_ROW_ID = 'usuarios_v1';
@@ -4394,7 +4565,7 @@ let _editandoId = null;
 const PRESETS_USR = {
   lectura:    { tabs:['detalle','indicadores','ausentismo'], acciones:{} },
   supervisor: { tabs:['detalle','ausentismo','vacaciones'], acciones:{} },
-  rrhh:       { tabs:['detalle','indicadores','ausentismo','liquidacion','premio','personal','vacaciones','ropa','polivalencia','pantalla','documentacion'], acciones:{novedades:true,personal:true,vacaciones:true,ropa:true,datosVer:true,datosEditar:true,polivalencia:true,pantalla:true,documentos:true} },
+  rrhh:       { tabs:['detalle','indicadores','ausentismo','liquidacion','premio','personal','vacaciones','ropa','polivalencia','pantalla','documentacion','portal','prestamos'], acciones:{novedades:true,personal:true,vacaciones:true,ropa:true,datosVer:true,datosEditar:true,polivalencia:true,pantalla:true,documentos:true,portal:true,prestamos:true} },
 };
 function sectoresDisponibles(){ return [...new Set(PERSONAL.map(p=>p.sector).filter(Boolean))].sort(); }
 function abrirEditorUsuario(u){
@@ -4565,6 +4736,7 @@ async function mutarPersonal(fn){
   const ok = await guardarFilaSupabase(PERSONAL_ROW_ID, { updatedAt:new Date().toISOString(), rows });
   if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
   PERSONAL = rows; limpiarCachePersonal();
+  portalProgramarPublicacion();
   return true;
 }
 const quienModifico = () => ({ por: ACCESO.usuario ? ACCESO.usuario.nombre : '', fecha: new Date().toISOString() });
@@ -5117,6 +5289,9 @@ const Vac = (function(){
   const cicloDe = iso => { const [y,m] = String(iso).split('-').map(Number); return m>=10 ? y : y-1; };
   const cicloHoy = () => { const t = new Date(), m = t.getMonth()+1, y = t.getFullYear(); return m>=10 ? y : (m<=4 ? y-1 : y); };
   const cicloLbl = y => `${y}/${String(y+1).slice(2)}`;
+  // período al que se imputa la solicitud: el elegido al cargarla o, si no se eligió, el de la fecha "desde"
+  const tieneCicloFijo = s => !!s && s.ciclo!=null && s.ciclo!=='';
+  const cicloSol = s => tieneCicloFijo(s) ? Math.max(CICLO_BASE, Number(s.ciclo)) : Math.max(CICLO_BASE, cicloDe(s.desde));
   let CICLO = Math.max(CICLO_BASE, cicloHoy());
   let PERIOD_START = new Date(CICLO,9,1), PERIOD_END = new Date(CICLO+1,3,30);
   function setCiclo(y){ CICLO = y; PERIOD_START = new Date(y,9,1); PERIOD_END = new Date(y+1,3,30); invalidar(); }
@@ -5179,7 +5354,7 @@ const Vac = (function(){
     if(pm===undefined) pm = pendManual;
     const pid = p.id;
     const propias = sols.filter(s=>s.pid===pid && !s.cancelada).slice().sort((a,b)=>a.desde.localeCompare(b.desde) || String(a.id).localeCompare(String(b.id)));
-    const maxC = Math.max(cicloHoy(), CICLO, hastaCiclo||0, ...propias.map(s=>cicloDe(s.desde)));
+    const maxC = Math.max(cicloHoy(), CICLO, hastaCiclo||0, ...propias.map(s=>cicloSol(s)));
     const C = {}, disp = {}, inicio = {}, imput = {};
     for(let y=CICLO_BASE; y<=maxC; y++){
       const m = man && man[y] && man[y][pid];
@@ -5194,22 +5369,30 @@ const Vac = (function(){
       disp[y] = ini - canc;
     }
     const snap = y => { if(inicio[y]!=null) return; let a = 0; for(let k=CICLO_BASE;k<y;k++) a += Math.max(0, disp[k]); inicio[y] = a; };
+    // si alguna solicitud tiene el período elegido a mano, el pendiente anterior de cada ciclo se calcula al final
+    const hayFijo = propias.some(tieneCicloFijo);
     for(const s of propias){
-      const cy = Math.min(maxC, Math.max(CICLO_BASE, cicloDe(s.desde)));
-      for(let y=CICLO_BASE; y<=cy; y++) snap(y);
+      const cy = Math.min(maxC, cicloSol(s));
+      if(!hayFijo) for(let y=CICLO_BASE; y<=cy; y++) snap(y);
       let need = Number(s.dias)||0; const imp = [];
+      if(tieneCicloFijo(s)){ disp[cy]-=need; C[cy].usado+=need; imp.push([cy,need]); need = 0; }
       for(let y=CICLO_BASE; y<=cy && need>0; y++){ const t = Math.min(Math.max(0, disp[y]), need); if(t>0){ disp[y]-=t; C[y].usado+=t; need-=t; imp.push([y,t]); } }
       if(need>0){ disp[cy]-=need; C[cy].usado+=need; imp.push([cy,need]); }
       imput[s.id] = imp;
     }
-    for(let y=CICLO_BASE; y<=maxC; y++){ snap(y); C[y].pend = disp[y]; }
+    if(hayFijo) for(let y=CICLO_BASE; y<=maxC; y++){
+      let a = 0; for(let k=CICLO_BASE;k<y;k++) a += Math.max(0, disp[k]);
+      for(const s of propias) if(cicloSol(s)>=y) for(const [k,d] of (imput[s.id]||[])) if(k<y) a += d;
+      inicio[y] = a;
+    }
+    for(let y=CICLO_BASE; y<=maxC; y++){ if(!hayFijo) snap(y); C[y].pend = disp[y]; }
     return { C, inicio, imput, maxC };
   }
   // Resumen de un ciclo: arrastre (pendiente de ciclos anteriores al empezar), corresponde, disponible, asignado, restante
   function resumenCiclo(sal, y, sols, pid){
     const c = sal.C[y] || {ini:0, corr:0};
     const arrastre = y<=CICLO_BASE ? 0 : (sal.inicio[y]||0);
-    const asignado = sols.filter(s=>s.pid===pid && !s.cancelada && Math.max(CICLO_BASE, cicloDe(s.desde))===y).reduce((t,s)=>t+Number(s.dias||0),0);
+    const asignado = sols.filter(s=>s.pid===pid && !s.cancelada && cicloSol(s)===y).reduce((t,s)=>t+Number(s.dias||0),0);
     const disponible = arrastre + c.ini;
     return { arrastre, corrCiclo:c.ini, disponible, asignado, restante: +(disponible-asignado).toFixed(1), restAnterior: Math.max(0, arrastre-asignado) };
   }
@@ -5256,12 +5439,17 @@ const Vac = (function(){
     const a = parseISO(s.desde), b = parseISO(s.hasta);
     const cy = Math.max(CICLO_BASE, cicloDe(s.desde)), ps = new Date(cy,9,1), pe = new Date(cy+1,3,30);
     if(a < ps || b > pe) out.push(`Fuera del período legal del ciclo ${cicloLbl(cy)} (01/10/${cy} al 30/04/${cy+1})`);
-    if(!validateStartDate(s.desde)) out.push('No inicia un lunes hábil');
+    if(!s.fraccion && !validateStartDate(s.desde)) out.push('No inicia un lunes hábil');
     const propias = lista.filter(x=>x.pid===s.pid && x.id!==s.id);
     // disponible del ciclo de la solicitud, sin contar esta solicitud
+    if(tieneCicloFijo(s)){
+      const cyI = cicloSol(s), salF = calcSaldo(e.p, propias, ajustes, corrManual, Math.max(cy, cyI)), pd = +(((salF.C[cyI]||{}).pend)||0).toFixed(1);
+      if(Number(s.dias||0) > pd) out.push(`Se imputa al ciclo ${cicloLbl(cyI)} y ese ciclo tiene ${pd} días pendientes`);
+    } else {
     const sal = calcSaldo(e.p, propias, ajustes, corrManual, cy), rc = resumenCiclo(sal, cy, propias, s.pid);
     const total = rc.asignado + Number(s.dias||0);
     if(total > rc.disponible) out.push(`Con esta solicitud suma ${total} días en el ciclo ${cicloLbl(cy)} y tiene ${rc.disponible} disponibles (${rc.arrastre} pendientes anteriores + ${rc.corrCiclo} del ciclo)`);
+    }
     const L = diasLegales(e.ingreso, cy);
     if(L && L.menos6) out.push('Tiene menos de 6 meses de antigüedad: le corresponde 1 día cada 20 trabajados');
     if(propias.some(x=>seCruzan(x,s))) out.push('Se superpone con otra solicitud de la misma persona');
@@ -5292,7 +5480,8 @@ const Vac = (function(){
     const pid=$('vacSelEmpleado').value, desde=$('vacDesde').value, hasta=$('vacHasta').value, dias=Number($('vacDias').value)||0;
     const box = $('vacFechaWarning');
     if(!pid || !desde || !hasta){ checkFecha(); return; }
-    const al = alertasDe({pid, desde, hasta, dias});
+    const ci = $('vacCicloImp') ? $('vacCicloImp').value : '';
+    const al = alertasDe({pid, desde, hasta, dias, ciclo: ci ? Number(ci) : undefined, fraccion: !!($('vacFracc') && $('vacFracc').checked)});
     if(!al.length){ box.style.display='none'; return; }
     box.innerHTML = `⚠ <b>Antes de cargar, revisá:</b><ul style="margin:4px 0 4px 18px;">${al.map(x=>`<li>${escHtml(x)}</li>`).join('')}</ul>Se puede cargar igual si el jefe lo autoriza: queda registrado con la observación.`;
     box.style.display='block';
@@ -5324,6 +5513,7 @@ const Vac = (function(){
     if(!ok){ msg('No se pudo guardar. Probá de nuevo.', true); return false; }
     solicitudesTodas = data.solicitudes; solicitudes = solicitudesTodas.filter(s=>!s.cancelada); feriados = data.feriados;
     ajustes = data.ajustes; corrManual = data.corrManual; pendManual = data.pendManual; invalidar();
+    portalProgramarPublicacion();
     return true;
   }
   function msg(t, err){ const el=$('vacFormMsg'); el.textContent=t; el.style.color = err ? 'var(--danger)' : 'var(--good)'; }
@@ -5418,14 +5608,110 @@ const Vac = (function(){
       <span>Asignado en el ciclo: <b>${asignado}</b></span>
       <span class="${cls}">Restante: <b>${restante}</b></span>
       ${!base && e.arrastre>0 ? `<span class="note" style="flex-basis:100%; font-family:inherit;">Las solicitudes usan primero el pendiente anterior${anteriores.length?` (queda sin usar: ${anteriores.join(' · ')})`:' (ya está todo asignado)'}.</span>` : ''}`;
-    renderMini(id);
+    renderMini(id); poblarCicloImp();
   }
   function botonesSol(it){
     if(it.cancelada) return esAdmin() ? `<button class="btn secondary small" data-vacreact="${it.id}">Reactivar</button> <button class="btn danger small" data-vacdel="${it.id}">Eliminar</button>` : '';
     let h = '';
     if(puedeAutorizar()) h += it.autorizo ? `<button class="btn secondary small" data-vacdesaut="${it.id}">Quitar autorización</button> ` : `<button class="btn small" data-vacaut="${it.id}">Autorizar</button> `;
+    h += `<button class="btn secondary small" data-vacform="${it.id}" title="Imprimir el formulario para firmar">📄 Formulario</button> `;
+    if(canEdit()) h += it.firmado ? `<button class="btn secondary small" data-vacfirma="${it.id}" title="Firmado: ${escHtml(it.firmado.por)} · ${fmtDisplay(String(it.firmado.fecha).slice(0,10))}" style="color:var(--good)">✓ Firmado</button> ` : `<button class="btn secondary small" data-vacfirma="${it.id}">Marcar firmado</button> `;
+    if(canEdit()) h += `<button class="btn secondary small" data-vacper="${it.id}" title="Elegir de qué ciclo descuenta los días">Período${tieneCicloFijo(it)?' '+cicloLbl(Number(it.ciclo)):''}</button> `;
     if(esAdmin()) h += `<button class="btn danger small" data-vaccanc="${it.id}">Cancelar</button>`;
     return h;
+  }
+  // opciones de período para una persona: ciclos desde el base hasta el de la fecha (o el actual), con su pendiente
+  function opcionesCiclo(pid, desde, sinId){
+    const p = PERSONAL.find(x=>x.id===pid); if(!p) return [];
+    const hasta = Math.max(cicloHoy(), CICLO, desde ? cicloDe(desde) : 0);
+    const sal = calcSaldo(p, solicitudesTodas.filter(s=>s.id!==sinId), ajustes, corrManual, hasta);
+    const out = []; for(let y=CICLO_BASE; y<=hasta; y++) out.push({ y, lbl:cicloLbl(y), pend:+(((sal.C[y]||{}).pend)||0).toFixed(1) });
+    return out;
+  }
+  function htmlOpcionesCiclo(pid, desde, actual){
+    return `<option value="">Automático (primero el pendiente más viejo)</option>` +
+      opcionesCiclo(pid, desde).map(o=>`<option value="${o.y}" ${String(actual)===String(o.y)?'selected':''}>${o.lbl} — pendiente ${o.pend}</option>`).join('');
+  }
+  function poblarCicloImp(){
+    const sel = $('vacCicloImp'); if(!sel) return; const v = sel.value, pid = $('vacSelEmpleado').value;
+    sel.innerHTML = pid ? htmlOpcionesCiclo(pid, $('vacDesde').value, v) : '<option value="">Automático (primero el pendiente más viejo)</option>';
+  }
+  async function cambiarPeriodo(id){
+    const s0 = solicitudesTodas.find(s=>s.id===id); if(!s0 || !canEdit()) return;
+    const e0 = PERSONAL.find(x=>x.id===s0.pid) || {};
+    const ops = opcionesCiclo(s0.pid, s0.desde, id);
+    const r = prompt(`Período al que se imputan las vacaciones de ${e0.nombre} (${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}, ${s0.dias} días).\n\nPendiente de cada ciclo sin contar esta solicitud: ${ops.map(o=>o.lbl+' = '+o.pend).join(' · ')}\n\nEscribí el ciclo (por ejemplo ${ops.length?ops[0].lbl:'2025/26'}) o dejalo vacío para automático:`, tieneCicloFijo(s0) ? cicloLbl(Number(s0.ciclo)) : '');
+    if(r===null) return;
+    const t = r.trim(); let y = null;
+    if(t){ const m = t.match(/^(\d{4})/); y = m ? Number(m[1]) : NaN; if(!ops.some(o=>o.y===y)){ alert('Ese ciclo no es válido. Usá uno de: '+ops.map(o=>o.lbl).join(', ')); return; } }
+    const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(!s) return; if(y==null) delete s.ciclo; else s.ciclo = y; });
+    if(ok){ registrarCambio('Vacaciones', 'Período de imputación cambiado', `${e0.nombre||s0.pid} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)} → ${y==null?'automático':cicloLbl(y)}`); render(); }
+  }
+  // ---- Formulario de Solicitud de Vacaciones (para firmar) ----
+  // Una fila por cada ciclo del que descuenta la solicitud; "Restan" = lo que queda en ese ciclo después de esta solicitud.
+  function imprimirFormulario(id){
+    const s = solicitudesTodas.find(x=>x.id===id); if(!s) return;
+    const p = PERSONAL.find(x=>x.id===s.pid); if(!p){ alert('La persona no está en el listado.'); return; }
+    const orden = (a,b)=>a.desde.localeCompare(b.desde) || String(a.id).localeCompare(String(b.id));
+    const hasta = solicitudesTodas.filter(x=>x.pid===s.pid && !x.cancelada && orden(x,s)<=0);
+    const sal = calcSaldo(p, hasta, ajustes, corrManual, cicloSol(s));
+    const imp = (sal.imput[s.id] && sal.imput[s.id].length) ? sal.imput[s.id] : [[cicloSol(s), Number(s.dias)||0]];
+    const e = v => escHtml(v==null ? '' : String(v));
+    const filas = imp.map(([y,d])=>`<tr><td>Vacaciones corresponden al AÑO: ${cicloLbl(y)}</td><td class="c">X</td><td class="c">${e(d)}</td><td class="c">${e(+(((sal.C[y]||{}).pend)||0).toFixed(1))}</td><td class="c">${fmtFechaISO(s.desde)}</td><td class="c">${fmtFechaISO(s.hasta)}</td></tr>`).join('')
+      + Array.from({length:Math.max(0,5-imp.length)}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
+    const jefe = s.autorizo ? s.autorizo.nombre : '';
+    const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Solicitud de vacaciones — ${e(p.nombre)}</title>
+    <style>
+      @page{size:A4;margin:16mm 14mm}
+      body{font-family:Arial,Helvetica,sans-serif;color:#000;margin:0;font-size:12px}
+      .hoja{max-width:180mm;margin:0 auto}
+      .cab{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+      .cab img{height:62px}
+      .cab h1{font-size:15px;text-align:right;margin:8px 0 0;line-height:1.25}
+      table{width:100%;border-collapse:collapse} td,th{border:1px solid #000;padding:6px 6px;vertical-align:middle}
+      th{font-size:11.5px} .c{text-align:center} .tit{background:#d9d9d9;text-align:center;font-weight:bold;text-decoration:underline}
+      .lbl{width:118px;white-space:nowrap} .fecha{width:125px;margin-left:auto;border:1px solid #000;padding:6px;margin-bottom:-1px}
+      .txt{font-size:12.5px;line-height:1.75;padding:6px 6px}
+      .firmas td{height:30px} .acl{font-size:7px;vertical-align:top;color:#333}
+      .pie{font-size:9px;color:#666;margin-top:10px}
+      @media print{.noprint{display:none}}
+    </style></head><body><div class="hoja">
+    <div class="cab"><img src="data:image/png;base64,${LOGO_SPL_NEGRO}" alt="Spotsline"><h1>Formulario de Solicitud de<br>Vacaciones</h1></div>
+    <div class="fecha">Fecha: ${new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})}</div>
+    <table>
+      <tr><td colspan="4" class="tit">DATOS PERSONALES</td></tr>
+      <tr><td class="lbl">Apellido y Nombre:</td><td colspan="3">${e(p.nombre)}</td></tr>
+      <tr><td class="lbl">Legajo:</td><td>${e(p.legajo)}</td><td class="lbl">Puesto:</td><td>${e(tituloCaso(p.sector||''))}</td></tr>
+      <tr><td class="lbl">Área:</td><td>${e(tituloCaso(p.gerencia||''))}</td><td class="lbl">Jefe Inmediato:</td><td>${e(jefe)}</td></tr>
+    </table>
+    <p style="margin:10px 4px 6px">Solicito hacer uso de los días de licencia por:</p>
+    <table>
+      <tr><th>Tipo de Licencia</th><th style="width:28px">X</th><th style="width:52px">Cantidad de días</th><th style="width:48px">Restan</th><th style="width:66px">Fecha Comienzo</th><th style="width:70px">Fecha Finalización</th></tr>
+      ${filas}
+      <tr><td colspan="6" class="txt">Las vacaciones deberán tomarse dentro del período comprendido entre el 1ero de octubre y el 30 de abril del año siguiente. Las vacaciones que no se gocen dentro del periodo comprendido anteriormente se tomaran como gozadas siendo liquidadas en el periodo Abril del año correspondiente.<br>Las licencias por vacaciones comenzaran un día Lunes o en el caso de ser feriado el día hábil consecutivo, el mínimo de goce es de 7 días.</td></tr>
+      <tr><td colspan="6">&nbsp;${s.obs?e(s.obs):''}</td></tr>
+      <tr><td colspan="6" class="tit">FIRMAS AUTORIZANTES</td></tr>
+    </table>
+    <table class="firmas" style="margin-top:-1px">
+      <tr><td style="width:30%">Colaborador Solicitante</td><td style="width:33%"></td><td class="acl">ACLARACIÓN</td></tr>
+      <tr><td>Responsable Inmediato</td><td></td><td class="acl">ACLARACIÓN</td></tr>
+      <tr><td>Recursos Humanos</td><td></td><td class="acl">ACLARACIÓN</td></tr>
+    </table>
+    <div class="pie">Impreso desde el Panel de RRHH el ${new Date().toLocaleString('es-AR')}${s.autorizo?` · autorizada por ${e(s.autorizo.nombre)} el ${fmtDisplay(String(s.autorizo.fecha).slice(0,10))}`:' · pendiente de autorización'}.</div>
+    </div><script>window.onload=()=>{ window.print(); }<\/script></body></html>`;
+    const w = window.open('', '_blank');
+    if(!w){ alert('El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para este sitio.'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    registrarCambio('Vacaciones', 'Formulario de vacaciones impreso', `${p.nombre} · ${fmtDisplay(s.desde)} a ${fmtDisplay(s.hasta)}`);
+  }
+  function imprimirPorRef(ref){ const s = solicitudesTodas.find(x=>x.solRef===ref && !x.cancelada); if(s) imprimirFormulario(s.id); }
+  async function marcarFirmado(id){
+    const s0 = solicitudesTodas.find(x=>x.id===id); if(!s0 || !canEdit()) return;
+    const e0 = PERSONAL.find(x=>x.id===s0.pid) || {};
+    const quitar = !!s0.firmado;
+    if(!confirm(quitar ? `¿Quitar la marca de formulario firmado de ${e0.nombre}?` : `¿Marcar que ${e0.nombre} firmó el formulario de vacaciones (${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)})?`)) return;
+    const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(!s) return; if(quitar) delete s.firmado; else s.firmado = { por:ACCESO.usuario.nombre, fecha:new Date().toISOString() }; });
+    if(ok){ registrarCambio('Vacaciones', quitar ? 'Formulario: se quitó la marca de firmado' : 'Formulario de vacaciones firmado', `${e0.nombre||s0.pid} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}`); render(); }
   }
   function renderMini(id){
     const wrap = $('vacMiniList');
@@ -5438,7 +5724,7 @@ const Vac = (function(){
           <td><span class="vac-est sinreg" title="${escHtml(`Cancelada por ${it.cancelada.por||''} el ${fmtDisplay((it.cancelada.fecha||'').slice(0,10)||it.desde)}${it.cancelada.motivo?' — '+it.cancelada.motivo:''}`)}">Cancelada</span></td><td>${escHtml(it.obs||'')}</td><td style="white-space:nowrap">${botonesSol(it)}</td></tr>`;
         const x = estadoSol(it);
         return `<tr><td class="mono">${fmtDisplay(it.desde)}${x.al.length?`<span class="warn-badge" title="${escHtml(x.al.join(' · '))}">⚠</span>`:''}</td>
-        <td class="mono">${fmtDisplay(it.hasta)}</td><td class="mono" title="${escHtml(txtImput(it))}">${it.dias}<span class="note" style="display:block;font-size:10px;">${cicloLbl(Math.max(CICLO_BASE,cicloDe(it.desde)))}</span></td><td>${chipEstado(it)}</td><td>${escHtml(it.obs||'')}</td>
+        <td class="mono">${fmtDisplay(it.hasta)}</td><td class="mono" title="${escHtml(txtImput(it))}">${it.dias}<span class="note" style="display:block;font-size:10px;">${cicloLbl(cicloSol(it))}${tieneCicloFijo(it)?' (elegido)':''}${it.fraccion?' · fraccionada':''}</span></td><td>${chipEstado(it)}</td><td>${escHtml(it.obs||'')}</td>
         <td style="white-space:nowrap">${botonesSol(it)}</td></tr>`; }).join('') + `</tbody></table>`;
   }
   function recalcDias(){
@@ -5454,16 +5740,19 @@ const Vac = (function(){
     const a=parseISO(desde), b=parseISO(hasta);
     if(b<a){ msg('La fecha "hasta" no puede ser anterior a "desde".', true); return; }
     if(!dias || dias<=0){ msg('Los días deben ser un número mayor a 0.', true); return; }
-    const alertaFecha = !validateStartDate(desde);
+    const fraccion = !!($('vacFracc') && $('vacFracc').checked && (puedeAutorizar() || esAdmin()));
+    const alertaFecha = !fraccion && !validateStartDate(desde);
     const jefe = (puedeAutorizar() && $('vacAutAhora').checked) ? ACCESO.usuario.nombre : '';
-    const al = alertasDe({pid, desde, hasta, dias});
+    const al = alertasDe({pid, desde, hasta, dias, fraccion, ciclo: ($('vacCicloImp') && $('vacCicloImp').value) ? Number($('vacCicloImp').value) : undefined});
     if(al.length && jefe && !confirm(`Esta solicitud tiene observaciones:\n\n• ${al.join('\n• ')}\n\n¿La autorizás igual? Queda registrado a tu nombre con la observación.`)) return;
     const autorizo = jefe ? { nombre:jefe, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
-    const ok = await mutar(d=>{ d.solicitudes.push({ id:uid(), pid, desde, hasta, dias, obs, alertaFecha, autorizo }); });
+    const cicloElegido = $('vacCicloImp') ? $('vacCicloImp').value : ''; let nuevaId = null;
+    const ok = await mutar(d=>{ const nueva = { id:uid(), pid, desde, hasta, dias, obs, alertaFecha, autorizo }; nuevaId = nueva.id; if(cicloElegido) nueva.ciclo = Number(cicloElegido); if(fraccion){ nueva.fraccion = true; nueva.fraccionPor = ACCESO.usuario.nombre; } d.solicitudes.push(nueva); });
     if(!ok) return;
     registrarCambio('Vacaciones', 'Solicitud cargada', `${(empById(pid)||{}).nombre||pid} · ${fmtDisplay(desde)} a ${fmtDisplay(hasta)} (${dias} días)${jefe?' · autorizó '+jefe:' · falta autorización'}${al.length?' · obs: '+al.join(' / '):''}${obs?' · '+obs:''}`);
     msg(!jefe ? 'Solicitud agregada. Queda pendiente de autorización del jefe.' : (al.length ? `Solicitud agregada y autorizada por ${jefe} con observaciones.` : `Solicitud agregada y autorizada por ${jefe}.`), !jefe || al.length>0);
-    $('vacObs').value=''; $('vacAutAhora').checked=false; render();
+    $('vacObs').value=''; $('vacAutAhora').checked=false; if($('vacCicloImp')) $('vacCicloImp').value=''; if($('vacFracc')) $('vacFracc').checked=false; render();
+    if(jefe && nuevaId && confirm('Solicitud autorizada. ¿Imprimir el formulario para que lo firme?')) imprimirFormulario(nuevaId);
   }
 
   async function autorizar(id, silencioso){
@@ -5477,7 +5766,7 @@ const Vac = (function(){
     }
     const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(s) s.autorizo = { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al, obs:obsJ }; });
     if(ok) registrarCambio('Vacaciones', 'Solicitud autorizada', `${e0.nombre} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}${al.length?' · obs: '+al.join(' / '):''}${obsJ?' · '+obsJ:''}`);
-    if(ok && !silencioso) render();
+    if(ok && !silencioso){ render(); if(confirm('Vacaciones autorizadas. ¿Imprimir el formulario para que lo firme?')) imprimirFormulario(id); }
     return ok;
   }
   async function quitarAutorizacion(id){
@@ -5588,7 +5877,19 @@ const Vac = (function(){
     const ppd = ZOOM.ppd, W = Math.round(totalDays*ppd);
     const prevScroll = (wrap.firstElementChild && wrap.firstElementChild.scrollLeft) || 0, prevPpd = ZOOM._ultimo || ppd;
     const threshold = Number($('vacThreshold').value || 1);
-    const sectors = {}; empleados().forEach(e=>{ (sectors[e.sector] = sectors[e.sector]||[]).push(e); });
+    // filtros: área (gerencia), sector, persona y fechas
+    const F = { ger:$('vacCalGer').value, sec:$('vacCalSec').value, q:($('vacCalPers').value||'').toLowerCase().trim(), d:$('vacCalDesde').value, h:$('vacCalHasta').value, solo:$('vacCalSolo').checked };
+    const todos = empleados();
+    const opts = (sel, vals, todosTxt) => { const v = sel.value; sel.innerHTML = `<option value="">${todosTxt}</option>` + vals.map(x=>`<option ${x===v?'selected':''}>${escHtml(x)}</option>`).join(''); };
+    opts($('vacCalGer'), [...new Set(todos.map(e=>e.gerencia).filter(Boolean))].sort(), 'Todas las áreas');
+    opts($('vacCalSec'), [...new Set(todos.filter(e=>!F.ger || e.gerencia===F.ger).map(e=>e.sector).filter(Boolean))].sort(), 'Todos los sectores');
+    if(F.sec && !$('vacCalSec').value) F.sec = '';
+    const enRango = s => (!F.d || s.hasta >= F.d) && (!F.h || s.desde <= F.h);
+    const lista = todos.filter(e=>(!F.ger || e.gerencia===F.ger) && (!F.sec || e.sector===F.sec) && (!F.q || `${e.nombre} ${e.legajo}`.toLowerCase().includes(F.q)))
+      .filter(e=>!(F.solo && (F.d || F.h)) || solicitudes.some(s=>s.pid===e.id && enRango(s)));
+    const filtrando = F.ger || F.sec || F.q || F.d || F.h;
+    $('vacCalInfo').textContent = filtrando ? `${lista.length} de ${todos.length} persona(s)` + ((F.d && (F.d < fmtDateISO(PERIOD_START) || F.d > fmtDateISO(PERIOD_END))) ? ' · la fecha "desde" es de otro ciclo: cambiá el ciclo arriba' : '') : '';
+    const sectors = {}; lista.forEach(e=>{ (sectors[e.sector] = sectors[e.sector]||[]).push(e); });
     const names = Object.keys(sectors).sort();
     const idx = d => Math.round((d-PERIOD_START)/86400000);
     const hoy = new Date(); hoy.setHours(0,0,0,0); const iHoy = idx(hoy);
@@ -5612,6 +5913,8 @@ const Vac = (function(){
     for(let i=0;i<totalDays;i++){ const d = new Date(PERIOD_START); d.setDate(d.getDate()+i); const dow=d.getDay(); if(dow===0||dow===6||feriados.includes(fmtDateISO(d))) fondos.push(i); }
     const bg = `<div style="position:absolute; inset:0; pointer-events:none;">${fondos.map(i=>`<div style="position:absolute; top:0; bottom:0; left:${i*ppd}px; width:${ppd}px; background:rgba(255,255,255,.035)"></div>`).join('')}${ppd>=10?`<div style="position:absolute; inset:0; background-image:repeating-linear-gradient(to right, transparent 0, transparent ${ppd-1}px, rgba(255,255,255,.05) ${ppd-1}px, rgba(255,255,255,.05) ${ppd}px);"></div>`:''}</div>`;
     const lineaHoy = (iHoy>=0 && iHoy<totalDays) ? `<div class="hoyline" style="left:${iHoy*ppd + ppd/2}px"></div>` : '';
+    const rI = F.d ? Math.max(0, idx(parseISO(F.d))) : 0, rF = F.h ? Math.min(totalDays-1, idx(parseISO(F.h))) : totalDays-1;
+    const rango = (F.d || F.h) && rF >= rI ? `<div style="position:absolute; top:0; bottom:0; left:${rI*ppd}px; width:${(rF-rI+1)*ppd}px; background:rgba(245,196,0,.10); border-left:1px solid rgba(245,196,0,.5); border-right:1px solid rgba(245,196,0,.5); pointer-events:none;"></div>` : '';
     let html = `<div class="cal2"><div class="cab">
       <div class="fila" style="border-top:0"><div class="lbl" style="font-weight:650">Sector / persona</div><div class="dias" style="width:${W}px; height:28px">${meses}</div></div>
       <div class="fila"><div class="lbl note">${ppd>=14?'Día':''}</div><div class="dias" style="width:${W}px; height:${ppd>=22?34:22}px">${dias}</div></div></div>`;
@@ -5624,7 +5927,7 @@ const Vac = (function(){
       const maxOv = Math.max(0, ...dayCount);
       html += `<div class="fila sec"><div class="lbl sec">${escHtml(sec)} <span style="color:var(--muted); font-weight:400;">(${emps.length})</span>${maxOv>threshold?` <span class="warn-chip" style="color:var(--danger)">⚠ hasta ${maxOv} el mismo día</span>`:''}</div><div class="track2" style="width:${W}px; height:26px">${bg}${lineaHoy}</div></div>`;
       emps.forEach(e=>{
-        html += `<div class="fila"><div class="lbl">${nombreConEstado(e)}</div><div class="track2" style="width:${W}px">${bg}${lineaHoy}`;
+        html += `<div class="fila"><div class="lbl">${nombreConEstado(e)}</div><div class="track2" style="width:${W}px">${bg}${rango}${lineaHoy}`;
         solicitudes.filter(s=>s.pid===e.id).forEach(s=>{
           const si = Math.max(0, idx(parseISO(s.desde))), ei = Math.min(totalDays-1, idx(parseISO(s.hasta)));
           if(ei<0 || si>totalDays-1) return;
@@ -5638,7 +5941,9 @@ const Vac = (function(){
     });
     wrap.innerHTML = html + `</div>`;
     const sc = wrap.firstElementChild;
-    sc.scrollLeft = ZOOM._irHoy ? Math.max(0, iHoy*ppd - (sc.clientWidth-LBL_W)/2) : prevScroll * (ppd/prevPpd);
+    sc.scrollLeft = ZOOM._irHoy ? Math.max(0, iHoy*ppd - (sc.clientWidth-LBL_W)/2) : (ZOOM._irRango && F.d) ? Math.max(0, rI*ppd - 20) : prevScroll * (ppd/prevPpd);
+    ZOOM._irRango = false;
+    if(!names.length) wrap.querySelector('.cal2').insertAdjacentHTML('beforeend', '<div class="empty">Nadie coincide con los filtros elegidos.</div>');
     ZOOM._irHoy = false; ZOOM._ultimo = ppd;
     $('vacZoomInfo').textContent = ppd>=60 ? 'vista por semana' : ppd>=20 ? 'vista por mes' : ppd>=8 ? 'vista por quincena' : 'vista del período';
   }
@@ -5674,6 +5979,12 @@ const Vac = (function(){
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sol), 'Solicitudes');
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sal), 'Saldos por ciclo');
     if(aj.length>1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aj), 'Bajas de pendientes');
+    const porSec = {}; emps.forEach(e=>{ const k = e.empresa+'|'+(e.sector||'Sin sector'); const x = porSec[k] = porSec[k] || {emp:e.empresa, sec:e.sector||'Sin sector', n:0, arr:0, corr:0, disp:0, asig:0, rest:0, aut:0, falta:0, sinUsar:0};
+      x.n++; x.arr+=e.arrastre; x.corr+=e.corrCiclo; x.disp+=e.disponible; x.asig+=e.asignado; x.rest+=e.restante; if(e.asignado<=0) x.sinUsar++;
+      solicitudes.filter(s=>s.pid===e.id && enCiclo(s)).forEach(s=>{ if(s.autorizo) x.aut+=Number(s.dias)||0; else x.falta+=Number(s.dias)||0; }); });
+    const sec = [['Empresa','Sector','Personas','Pendiente anterior',`Corresponde ${L}`,'Disponible','Asignado','Autorizado','Falta autorizar','Restante','% asignado','Personas sin vacaciones asignadas']];
+    Object.values(porSec).sort((a,b)=>a.emp.localeCompare(b.emp)||a.sec.localeCompare(b.sec)).forEach(x=>sec.push([x.emp,x.sec,x.n,+x.arr.toFixed(1),+x.corr.toFixed(1),+x.disp.toFixed(1),+x.asig.toFixed(1),x.aut,x.falta,+x.rest.toFixed(1),x.disp>0?Math.round(x.asig/x.disp*100)/100:0,x.sinUsar]));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sec), 'Por sector');
     XLSX.writeFile(wb, `Vacaciones_${CICLO}-${CICLO+1}_Spotsline.xlsx`);
   }
 
@@ -5828,6 +6139,7 @@ const Vac = (function(){
     renderSub(); renderKPIs(); renderAviso(); poblarSelect(); actualizarMeta(); renderFeriados(); renderSolicitudes();
     const pa = puedeAutorizar();
     $('vacAutWrap').style.display = pa ? 'flex' : 'none';
+    $('vacFraccWrap').style.display = (pa || esAdmin()) ? 'flex' : 'none';
     $('vacAutLbl').innerHTML = `Autorizar ahora, como <b>${escHtml((ACCESO.usuario||{}).nombre||'')}</b> (jefe)`;
     $('vacAutNota').style.display = pa ? 'none' : 'block';
     if($('vtab-calendario').classList.contains('active')) renderCalendario();
@@ -5841,6 +6153,9 @@ const Vac = (function(){
     $('vacSelEmpleado').addEventListener('change', actualizarMeta);
     $('vacDesde').addEventListener('change', ()=>{ recalcDias(); checkFecha(); });
     $('vacHasta').addEventListener('change', recalcDias);
+    $('vacDesde').addEventListener('change', poblarCicloImp);
+    $('vacCicloImp').addEventListener('change', ()=>setTimeout(previsualizar,0));
+    $('vacFracc').addEventListener('change', ()=>{ setTimeout(previsualizar,0); });
     $('vacBtnAgregar').addEventListener('click', agregar);
     $('vacCiclo').addEventListener('change', e=>{ setCiclo(Number(e.target.value)); VAC_VIEW.sel.clear(); ZOOM.ppd = 0; ZOOM.preset = 'periodo'; $('vacMiniList').innerHTML=''; render(); });
     $('vacSalBuscar').addEventListener('input', renderSaldos);
@@ -5884,6 +6199,9 @@ const Vac = (function(){
     ['vacSelEmpleado','vacDesde','vacHasta','vacDias'].forEach(id=>$(id).addEventListener('change', ()=>setTimeout(previsualizar,0)));
     const accionesSol = e=>{
       const a = e.target.closest('[data-vacaut]'); if(a){ autorizar(a.dataset.vacaut); return true; }
+      const per = e.target.closest('[data-vacper]'); if(per){ cambiarPeriodo(per.dataset.vacper); return true; }
+      const fo = e.target.closest('[data-vacform]'); if(fo){ imprimirFormulario(fo.dataset.vacform); return true; }
+      const fi = e.target.closest('[data-vacfirma]'); if(fi){ marcarFirmado(fi.dataset.vacfirma); return true; }
       const q = e.target.closest('[data-vacdesaut]'); if(q){ quitarAutorizacion(q.dataset.vacdesaut); return true; }
       const c = e.target.closest('[data-vaccanc]'); if(c){ cancelarSolicitudes([c.dataset.vaccanc]); return true; }
       const r = e.target.closest('[data-vacreact]'); if(r){ reactivar(r.dataset.vacreact); return true; }
@@ -5902,11 +6220,53 @@ const Vac = (function(){
     $('vacKpis').addEventListener('click', e=>{ const k = e.target.closest('[data-vackpi]'); if(!k) return; VAC_VIEW.estado = (VAC_VIEW.estado===k.dataset.vackpi) ? '' : k.dataset.vackpi; renderKPIs(); setSub('solicitudes'); });
     $('vacFiltroEstado').addEventListener('change', e=>{ VAC_VIEW.estado = e.target.value; renderKPIs(); renderSolicitudes(); });
     document.querySelectorAll('[data-calzoom]').forEach(b=>b.addEventListener('click', ()=>zoom(b.dataset.calzoom)));
+    ['vacCalGer','vacCalSec','vacCalSolo'].forEach(id=>$(id).addEventListener('change', renderCalendario));
+    $('vacCalPers').addEventListener('input', renderCalendario);
+    ['vacCalDesde','vacCalHasta'].forEach(id=>$(id).addEventListener('change', ()=>{ ZOOM._irRango = true; renderCalendario(); }));
+    $('vacCalLimpiar').addEventListener('click', ()=>{ ['vacCalGer','vacCalSec','vacCalPers','vacCalDesde','vacCalHasta'].forEach(id=>$(id).value=''); $('vacCalSolo').checked = true; renderCalendario(); });
     window.addEventListener('resize', ()=>{ if($('vtab-calendario').classList.contains('active') && ZOOM.preset && !ZOOM._manual) { ZOOM.ppd = 0; renderCalendario(); } });
     try{ $('vacLogo').src = 'data:image/png;base64,' + LOGO_SPL_BLANCO; }catch(err){}
     render();
   }
-  return { init, render, resumenFicha };
+  // ---- para el Portal del empleado ----
+  async function asegurar(){ if(!cargado) await cargar(); }
+  function feriadosActuales(){ return feriados.slice(); }
+  function alertasPara(s){ if(!cargado || !s || !s.pid || !s.desde || !s.hasta) return []; try{ return alertasDe({ id:'__portal', ...s }, solicitudes); }catch(e){ return []; } }
+  function saldoDe(pid){
+    const p = PERSONAL.find(x=>x.id===pid); if(!p || !cargado) return null;
+    const y = Math.max(CICLO_BASE, cicloHoy()), sal = calcSaldo(p, solicitudesTodas, ajustes, corrManual, y);
+    return { lbl:cicloLbl(y), ...resumenCiclo(sal, y, solicitudesTodas, pid) };
+  }
+  function resumenPortal(p){
+    const hoyC = Math.max(CICLO_BASE, cicloHoy());
+    const sal = calcSaldo(p, solicitudesTodas, ajustes, corrManual, hoyC);
+    const ciclos = []; let tot = 0;
+    for(let y=CICLO_BASE; y<=sal.maxC; y++){ const c = sal.C[y]; tot += c.pend; ciclos.push({ y, lbl:cicloLbl(y), corr:c.corr, tomado:+((c.previo||0)+c.usado).toFixed(1), baja:c.canc, pend:+c.pend.toFixed(1) }); }
+    const act = resumenCiclo(sal, hoyC, solicitudesTodas, p.id);
+    const sols = solicitudesTodas.filter(s=>s.pid===p.id && Math.max(CICLO_BASE, cicloDe(s.desde))>=hoyC-1)
+      .sort((a,b)=>b.desde.localeCompare(a.desde)).slice(0,24).map(s=>({
+        desde:s.desde, hasta:s.hasta, dias:s.dias, ciclo:cicloLbl(cicloSol(s)),
+        estado: s.cancelada ? 'cancelada' : (s.autorizo ? 'autorizada' : 'pendiente'),
+        autorizo: s.autorizo ? s.autorizo.nombre : '', descuenta:(sal.imput[s.id]||[]).map(([y,d])=>`${d} del ${cicloLbl(y)}`).join(' + '), portal: !!s.solRef }));
+    return { ciclo:hoyC, lbl:cicloLbl(hoyC), periodo:`01/10/${hoyC} al 30/04/${hoyC+1}`, pendienteTotal:+tot.toFixed(1),
+             actual:{ arrastre:act.arrastre, corresponde:act.corrCiclo, disponible:act.disponible, asignado:act.asignado, restante:act.restante }, ciclos, solicitudes:sols };
+  }
+  // pedido aprobado desde el portal → solicitud de vacaciones (si ya se cargó, no la duplica)
+  async function agregarExterna(o){
+    await asegurar();
+    if(!(ACCESO.esAdmin || canEdit())){ alert('No tenés permiso para cargar vacaciones.'); return false; }
+    const e = PERSONAL.find(x=>x.id===o.pid); if(!e){ alert('La persona no está en el listado.'); return false; }
+    const al = alertasPara(o);
+    const autorizo = (o.autorizar && puedeAutorizar()) ? { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
+    let ya = false;
+    const ok = await mutar(d=>{ if(d.solicitudes.some(s=>s.solRef===o.solRef && !s.cancelada)){ ya = true; return; }
+      const nueva = { id:uid(), pid:o.pid, desde:o.desde, hasta:o.hasta, dias:o.dias, obs:o.obs||'', alertaFecha:!validateStartDate(o.desde), autorizo, solRef:o.solRef }; if(o.ciclo!=null && o.ciclo!=='') nueva.ciclo = Number(o.ciclo); d.solicitudes.push(nueva); });
+    if(!ok){ alert('No se pudo guardar en Vacaciones. Probá de nuevo.'); return false; }
+    if(!ya) registrarCambio('Vacaciones', 'Solicitud cargada desde el portal', `${e.nombre} · ${fmtDisplay(o.desde)} a ${fmtDisplay(o.hasta)} (${o.dias} días)${o.ciclo?' · imputa a '+cicloLbl(Number(o.ciclo)):''}${autorizo?' · autorizó '+autorizo.nombre:' · falta autorización'}${al.length?' · obs: '+al.join(' / '):''}`);
+    if(uiOk) render();
+    return true;
+  }
+  return { init, render, resumenFicha, asegurar, feriadosActuales, alertasPara, saldoDe, resumenPortal, agregarExterna, htmlOpcionesCiclo, imprimirPorRef };
 })();
 
 // ====== DATOS PERSONALES (DNI, CUIL, domicilio, nacimiento, contacto) ======
@@ -5950,7 +6310,7 @@ async function mutarDatos(fn){
   const res = fn(datos); if(res && res.error){ alert(res.error); return false; }
   const ok = await guardarFilaSupabase(DATOS_ROW_ID, { updatedAt:new Date().toISOString(), datos });
   if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
-  DATOS = datos; _datosCargados = true; return true;
+  DATOS = datos; _datosCargados = true; portalProgramarPublicacion(); return true;
 }
 function iniciarDatosPersonales(){
   if(!(puede('datosVer') || puede('datosEditar') || puede('ropa'))) return;
@@ -7454,6 +7814,8 @@ function alCambiarTab(id){
   if(id==='documentacion' && typeof initDocs==='function') initDocs();
   if(id==='polivalencia' && typeof polRender==='function') polRender();
   if(id==='pantalla' && typeof panRenderConfig==='function') panRenderConfig();
+  if(id==='portal') PortalRRHH.init();
+  if(id==='prestamos') Prest.init();
 }
 function renderTabsNuevas(){
   initPersonalUI(); renderPersonal();
@@ -7461,8 +7823,551 @@ function renderTabsNuevas(){
   initAusentismoUI();
   initRegistroUI(); initMejorasUI(); cargarMejoras(); initDatosUI();
   if(puedeVerTab('vacaciones')) Vac.init();
+  PortalRRHH.arranque().catch(()=>{});
 }
 
+
+
+// =====================================================================
+// ====== PORTAL DEL EMPLEADO (lado empresa) y PRÉSTAMOS ======
+// El empleado entra a portal_empleado.html con legajo + clave. El portal NO lee las tablas: llama a
+// funciones de Supabase (portal_empleado.sql) que solo devuelven los datos de esa persona.
+//  · 'rrhh_portal_v1'    → lo que ve cada empleado (lo arma y publica este panel): saldos de vacaciones,
+//                          préstamos, datos personales, más la configuración (link de recibos, avisos, contacto).
+//  · 'rrhh_sol_<pid>_…'  → un registro por pedido del empleado (vacaciones, datos, constancia, ausencia, consulta).
+//  · 'rrhh_blanqueos_v1' → { pid: fecha } claves blanqueadas (vuelve a entrar con el DNI).
+//  · 'prestamos_v1'      → préstamos otorgados y sus cuotas cobradas.
+// =====================================================================
+const PORTAL_ROW_ID = 'rrhh_portal_v1', BLANQ_ROW_ID = 'rrhh_blanqueos_v1', PREST_ROW_ID = 'prestamos_v1';
+const PORTAL_URL = 'https://spotsline.github.io/Panel-de-Ausentismo/portal_empleado.html';
+const PORTAL_RECIBOS_DEF = 'https://rh21.com.ar/sistema/sueldosxxi/index.php/sisweb/SPOTSLINE';
+const TIPOS_PEDIDO = { vacaciones:'Vacaciones', datos:'Cambio de datos personales', constancia:'Constancia / certificado', ausencia:'Aviso de ausencia', consulta:'Consulta a RRHH' };
+const ESTADOS_PEDIDO = { pendiente:'Pendiente', aprobada:'Aprobada', resuelta:'Respondida', rechazada:'Rechazada', cancelada:'Cancelada por el empleado' };
+// campos que el empleado puede pedir cambiar (el resto los corrige RRHH a mano)
+const CAMPOS_PORTAL = ['domicilio','localidad','cp','provincia','tel','mail','hijos'];
+const rhMoney = n => '$ ' + (Number(n)||0).toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const rhR2 = n => Math.round((Number(n)||0)*100)/100;
+const rhMesHoy = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`; };
+const rhMesLbl = m => { if(!m) return ''; const [y,mm] = m.split('-'); return `${mm}/${y}`; };
+const rhFecha = iso => { if(!iso) return ''; const s = String(iso).slice(0,10).split('-'); return s.length===3 ? `${s[2]}/${s[1]}/${s[0].slice(2)}` : String(iso); };
+const rhFechaHora = iso => { try{ const d = new Date(iso); return d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return String(iso||''); } };
+const rhPersona = pid => PERSONAL.find(p=>p.id===pid);
+const rhPuedePublicar = () => ACCESO.esAdmin || ['portal','vacaciones','personal','datosEditar','prestamos'].some(a=>puede(a));
+function rhModal(tit, html){ document.getElementById('rhModalTit').textContent = tit; document.getElementById('rhModalCuerpo').innerHTML = html; document.getElementById('overlayRH').classList.add('open'); }
+function rhCerrarModal(){ document.getElementById('overlayRH').classList.remove('open'); }
+function rhOpcionesPersonal(sel, incluirVacio){
+  const L = PERSONAL.filter(p=>!p.baja).filter(personaPermitida).slice().sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  sel.innerHTML = (incluirVacio ? '<option value="">— Elegí una persona —</option>' : '') +
+    L.map(p=>`<option value="${escHtml(p.id)}">${escHtml(p.nombre)} · leg. ${escHtml(p.legajo==null?'—':p.legajo)} · ${escHtml(empresaCorta(p.empresa))}</option>`).join('');
+}
+
+// publicación del resumen que ve cada empleado (con demora, para juntar varios cambios seguidos)
+let _rhPubTimer = null, _rhPublicando = false;
+function portalProgramarPublicacion(){
+  if(!rhPuedePublicar()) return;
+  clearTimeout(_rhPubTimer);
+  _rhPubTimer = setTimeout(()=>{ PortalRRHH.publicar(false).catch(()=>{}); }, 4000);
+}
+
+// ---------------------------------------------------------------------
+const Prest = (function(){
+  let DATA = { items:[] }, cargado = false, ui = false;
+  const $ = id=>document.getElementById(id);
+  const canEdit = () => ACCESO.esAdmin || puede('prestamos');
+  const uid = () => 'pr' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  const pagado = l => rhR2((l.pagos||[]).reduce((t,p)=>t+Number(p.monto||0),0));
+  const saldo  = l => rhR2(Number(l.monto||0) - pagado(l));
+  const estado = l => l.anulado ? 'anulado' : (saldo(l) <= 0.004 ? 'cancelado' : 'vigente');
+  const cuotasPagas = l => (l.pagos||[]).length;
+  const cuotaDe = l => rhR2(Number(l.cuota) || (Number(l.monto)||0)/Math.max(1, Number(l.cuotas)||1));
+  function aCobrar(l, per){
+    if(estado(l)!=='vigente' || !l.inicio || l.inicio > per) return 0;
+    if((l.pagos||[]).some(p=>p.periodo===per && p.tipo==='liquidacion')) return 0;
+    return Math.min(cuotaDe(l), saldo(l));
+  }
+  async function cargar(){
+    const r = await leerFilaEstricta(PREST_ROW_ID);
+    if(r.ok){ DATA = (r.valor && Array.isArray(r.valor.items)) ? r.valor : { items:[] }; cargado = true; }
+    return r.ok;
+  }
+  async function asegurar(){ if(!cargado) await cargar(); }
+  async function mutar(fn, desc){
+    const r = await leerFilaEstricta(PREST_ROW_ID);
+    if(!r.ok){ alert('No se pudo conectar para guardar. Probá de nuevo.'); return false; }
+    const data = (r.valor && Array.isArray(r.valor.items)) ? r.valor : { items:[] };
+    const res = fn(data); if(res && res.error){ alert(res.error); return false; }
+    const ok = await guardarFilaSupabase(PREST_ROW_ID, { ...data, updatedAt:new Date().toISOString() });
+    if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
+    DATA = data; cargado = true;
+    if(desc) registrarCambio('Préstamos', desc[0], desc[1]);
+    portalProgramarPublicacion(); render();
+    return true;
+  }
+  const visibles = () => DATA.items.filter(l=>{ const p = rhPersona(l.pid); return !p || personaPermitida(p); });
+  const nombreDe = l => { const p = rhPersona(l.pid); return p ? p.nombre : (l.nombre||l.pid); };
+  const legajoDe = l => { const p = rhPersona(l.pid); return p ? p.legajo : (l.legajo||''); };
+
+  function renderKPIs(){
+    const V = visibles(), vig = V.filter(l=>estado(l)==='vigente'), per = $('prestPeriodo').value || rhMesHoy();
+    const anio = String(new Date().getFullYear());
+    const k = (lbl, val, sub) => `<div class="kpi"><div class="label">${lbl}</div><div class="value" style="font-size:22px">${val}</div><div class="sub">${sub||''}</div></div>`;
+    $('prestKpis').innerHTML = k('Préstamos vigentes', vig.length, `${new Set(vig.map(l=>l.pid)).size} persona(s)`) +
+      k('Saldo a cobrar', rhMoney(vig.reduce((t,l)=>t+saldo(l),0)), 'suma de lo que falta devolver') +
+      k(`Otorgado en ${anio}`, rhMoney(V.filter(l=>!l.anulado && String(l.fecha||'').startsWith(anio)).reduce((t,l)=>t+Number(l.monto||0),0)), `${V.filter(l=>!l.anulado && String(l.fecha||'').startsWith(anio)).length} préstamo(s)`) +
+      k(`A descontar ${rhMesLbl(per)}`, rhMoney(vig.reduce((t,l)=>t+aCobrar(l,per),0)), `${vig.filter(l=>aCobrar(l,per)>0).length} cuota(s)`);
+  }
+  function renderDescuentos(){
+    const per = $('prestPeriodo').value || rhMesHoy();
+    const L = visibles().map(l=>({l, m:aCobrar(l,per)})).filter(x=>x.m>0).sort((a,b)=>nombreDe(a.l).localeCompare(nombreDe(b.l),'es'));
+    const hechos = visibles().filter(l=>(l.pagos||[]).some(p=>p.periodo===per && p.tipo==='liquidacion'));
+    $('prestDescuentos').innerHTML = (L.length ? `<table><tr><th>Legajo</th><th>Empleado</th><th>Cuota</th><th style="text-align:right">A descontar</th><th style="text-align:right">Saldo después</th></tr>${
+      L.map(({l,m})=>`<tr><td class="mono">${escHtml(legajoDe(l))}</td><td>${escHtml(nombreDe(l))}</td><td class="mono">${cuotasPagas(l)+1} de ${l.cuotas}</td><td class="mono" style="text-align:right">${rhMoney(m)}</td><td class="mono" style="text-align:right">${rhMoney(saldo(l)-m)}</td></tr>`).join('')}
+      <tr><td></td><td><b>Total</b></td><td></td><td class="mono" style="text-align:right"><b>${rhMoney(L.reduce((t,x)=>t+x.m,0))}</b></td><td></td></tr></table>`
+      : `<div class="empty-hint">No hay cuotas pendientes de descontar en la liquidación de ${rhMesLbl(per)}.</div>`) +
+      (hechos.length ? `<div class="note" style="margin-top:8px">Ya registradas como cobradas en ${rhMesLbl(per)}: ${hechos.length} cuota(s) por ${rhMoney(hechos.reduce((t,l)=>t+(l.pagos||[]).filter(p=>p.periodo===per&&p.tipo==='liquidacion').reduce((a,p)=>a+Number(p.monto||0),0),0))}.</div>` : '');
+    $('prestBtnDescReg').disabled = !L.length;
+  }
+  function renderLista(){
+    const q = ($('prestBuscar').value||'').toLowerCase().trim(), f = $('prestFiltro').value;
+    const L = visibles().filter(l=>!f || estado(l)===f).filter(l=>!q || (nombreDe(l)+' '+legajoDe(l)).toLowerCase().includes(q))
+      .sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+    $('prestInfo').textContent = `${L.length} préstamo(s)`;
+    $('prestLista').innerHTML = L.length ? `<table><tr><th>Fecha</th><th>Legajo</th><th>Empleado</th><th style="text-align:right">Monto</th><th>Cuotas</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Saldo</th><th>Estado</th><th>Motivo</th><th></th></tr>${
+      L.map(l=>{ const e = estado(l); return `<tr><td class="mono">${rhFecha(l.fecha)}</td><td class="mono">${escHtml(legajoDe(l))}</td><td>${escHtml(nombreDe(l))}</td>
+        <td class="mono" style="text-align:right">${rhMoney(l.monto)}</td><td class="mono">${cuotasPagas(l)}/${l.cuotas} de ${rhMoney(cuotaDe(l))}<div class="muted" style="font-size:11px">desde ${rhMesLbl(l.inicio)}</div></td>
+        <td class="mono" style="text-align:right">${rhMoney(pagado(l))}</td><td class="mono" style="text-align:right"><b>${rhMoney(saldo(l))}</b></td>
+        <td><span class="est ${e}">${e==='vigente'?'Vigente':e==='cancelado'?'Pagado':'Anulado'}</span></td><td>${escHtml(l.obs||'')}</td>
+        <td style="white-space:nowrap"><button class="btn secondary small" data-prdet="${l.id}">Ver</button>${canEdit() && e==='vigente' ? ` <button class="btn secondary small" data-prpago="${l.id}">+ Pago</button>` : ''}</td></tr>`; }).join('')}</table>`
+      : '<div class="empty-hint" style="padding:16px">No hay préstamos con ese filtro.</div>';
+  }
+  function render(){
+    if(!ui) return;
+    document.body.classList.toggle('sin-editar-prestamos', !canEdit());
+    renderKPIs(); renderDescuentos(); renderLista();
+  }
+  function recalcCuota(){ const m = Number($('prestMonto').value), c = Math.max(1, Number($('prestCuotas').value)||1); if(m>0) $('prestCuota').value = rhR2(m/c); }
+  async function agregar(){
+    const pid = $('prestEmp').value, fecha = $('prestFecha').value, monto = rhR2($('prestMonto').value), cuotas = Math.max(1, Math.round(Number($('prestCuotas').value)||1));
+    const cuota = rhR2($('prestCuota').value) || rhR2(monto/cuotas), inicio = $('prestInicio').value, obs = $('prestObs').value.trim();
+    const msg = (t,err)=>{ $('prestMsg').textContent = t; $('prestMsg').style.color = err ? 'var(--danger)' : 'var(--good)'; };
+    if(!pid) return msg('Elegí el empleado.', true);
+    if(!fecha) return msg('Poné la fecha del préstamo.', true);
+    if(!(monto>0)) return msg('El monto tiene que ser mayor a 0.', true);
+    if(!inicio) return msg('Elegí el mes del primer descuento.', true);
+    const p = rhPersona(pid);
+    if(!confirm(`Registrar préstamo a ${p.nombre}: ${rhMoney(monto)} en ${cuotas} cuota(s) de ${rhMoney(cuota)}, desde la liquidación de ${rhMesLbl(inicio)}.`)) return;
+    const ok = await mutar(d=>{ d.items.push({ id:uid(), pid, legajo:p.legajo, nombre:p.nombre, fecha, monto, cuotas, cuota, inicio, obs, pagos:[], ...quienModifico(), creado:new Date().toISOString() }); },
+      ['Préstamo otorgado', `${p.nombre} · ${rhMoney(monto)} en ${cuotas} cuota(s) desde ${rhMesLbl(inicio)}${obs?' · '+obs:''}`]);
+    if(ok){ msg('Préstamo registrado.'); $('prestMonto').value=''; $('prestCuota').value=''; $('prestObs').value=''; $('prestCuotas').value='1'; }
+  }
+  async function registrarDescuentos(){
+    const per = $('prestPeriodo').value || rhMesHoy();
+    const L = visibles().filter(l=>aCobrar(l,per)>0);
+    if(!L.length) return;
+    if(!confirm(`Registrar como cobradas ${L.length} cuota(s) de la liquidación de ${rhMesLbl(per)} (total ${rhMoney(L.reduce((t,l)=>t+aCobrar(l,per),0))}).`)) return;
+    const ids = new Set(L.map(l=>l.id)), quien = quienModifico();
+    await mutar(d=>{ d.items.forEach(l=>{ if(!ids.has(l.id)) return; const m = aCobrar(l,per); if(m>0){ l.pagos = l.pagos||[]; l.pagos.push({ id:uid(), periodo:per, fecha:new Date().toISOString().slice(0,10), monto:m, tipo:'liquidacion', por:quien.por }); } }); },
+      ['Descuentos registrados', `${L.length} cuota(s) · liquidación ${rhMesLbl(per)}`]);
+  }
+  function exportarDescuentos(){
+    const per = $('prestPeriodo').value || rhMesHoy();
+    const rows = [['Legajo','Empleado','Empresa','Cuota N°','Cuotas','A descontar','Saldo después','Préstamo del','Monto del préstamo']];
+    visibles().map(l=>({l,m:aCobrar(l,per)})).filter(x=>x.m>0).forEach(({l,m})=>{ const p = rhPersona(l.pid)||{};
+      rows.push([legajoDe(l), nombreDe(l), p.empresa||'', cuotasPagas(l)+1, l.cuotas, m, rhR2(saldo(l)-m), l.fecha, l.monto]); });
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Descuentos');
+    XLSX.writeFile(wb, `Descuentos_prestamos_${per}.xlsx`);
+  }
+  function exportar(){
+    const a = [['Fecha','Legajo','Empleado','Empresa','Monto','Cuotas','Valor cuota','Primer descuento','Cobrado','Saldo','Estado','Motivo','Cargó']];
+    const b = [['Legajo','Empleado','Fecha préstamo','Período','Fecha registro','Tipo','Monto','Registró']];
+    visibles().forEach(l=>{ const p = rhPersona(l.pid)||{};
+      a.push([l.fecha, legajoDe(l), nombreDe(l), p.empresa||'', l.monto, l.cuotas, cuotaDe(l), rhMesLbl(l.inicio), pagado(l), saldo(l), estado(l), l.obs||'', l.por||'']);
+      (l.pagos||[]).forEach(x=>b.push([legajoDe(l), nombreDe(l), l.fecha, rhMesLbl(x.periodo), x.fecha, x.tipo==='liquidacion'?'Descuento en liquidación':'Pago directo', x.monto, x.por||''])); });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(a), 'Préstamos');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(b), 'Cobros');
+    XLSX.writeFile(wb, `Prestamos_personal_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+  function verDetalle(id){
+    const l = DATA.items.find(x=>x.id===id); if(!l) return;
+    const e = estado(l);
+    rhModal(`Préstamo · ${nombreDe(l)}`, `
+      <div class="ped-body">Otorgado el <b>${rhFecha(l.fecha)}</b> por <b>${rhMoney(l.monto)}</b> en ${l.cuotas} cuota(s) de ${rhMoney(cuotaDe(l))}, desde la liquidación de ${rhMesLbl(l.inicio)}.<br>
+        ${l.obs?`Motivo: ${escHtml(l.obs)}<br>`:''}Cargó: ${escHtml(l.por||'—')}${l.anulado?`<br><span class="alerta">Anulado por ${escHtml(l.anulado.por)} el ${rhFecha(l.anulado.fecha)}: ${escHtml(l.anulado.motivo||'')}</span>`:''}</div>
+      <table><tr><th>Período</th><th>Fecha</th><th>Tipo</th><th style="text-align:right">Monto</th><th></th></tr>${(l.pagos||[]).map((x,i)=>`<tr><td class="mono">${rhMesLbl(x.periodo)}</td><td class="mono">${rhFecha(x.fecha)}</td><td>${x.tipo==='liquidacion'?'Descuento en liquidación':'Pago directo'}</td><td class="mono" style="text-align:right">${rhMoney(x.monto)}</td><td>${canEdit() && i===(l.pagos.length-1) ? `<button class="btn secondary small" data-prdeshacer="${l.id}">Deshacer</button>`:''}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">Todavía no hay cobros registrados.</td></tr>'}
+      <tr><td colspan="3"><b>Saldo</b></td><td class="mono" style="text-align:right"><b>${rhMoney(saldo(l))}</b></td><td></td></tr></table>
+      ${canEdit() && e==='vigente' ? `<div class="ped-acc" style="margin-top:12px"><button class="btn secondary small" data-prpago="${l.id}">+ Registrar pago</button><button class="btn danger small" data-pranular="${l.id}">Anular préstamo</button></div>` : ''}`);
+  }
+  async function registrarPago(id){
+    const l = DATA.items.find(x=>x.id===id); if(!l || !canEdit()) return;
+    const sug = Math.min(cuotaDe(l), saldo(l));
+    const m = rhR2(String(prompt(`Monto cobrado a ${nombreDe(l)} (saldo ${rhMoney(saldo(l))}):`, sug)||'').replace(',','.'));
+    if(!(m>0)) return;
+    if(m > saldo(l)+0.004){ alert('El monto es mayor al saldo.'); return; }
+    const dir = confirm('¿Se descontó en la liquidación?\n\nAceptar = descuento en liquidación · Cancelar = pago directo (efectivo / transferencia)');
+    const per = dir ? (prompt('Mes de la liquidación (AAAA-MM):', rhMesHoy())||'').trim() : rhMesHoy();
+    if(!/^\d{4}-\d{2}$/.test(per)){ alert('El mes tiene que ser AAAA-MM, por ejemplo 2026-11.'); return; }
+    await mutar(d=>{ const x = d.items.find(y=>y.id===id); if(!x) return {error:'No se encontró el préstamo.'}; x.pagos = x.pagos||[];
+      x.pagos.push({ id:uid(), periodo:per, fecha:new Date().toISOString().slice(0,10), monto:m, tipo:dir?'liquidacion':'pago', por:quienModifico().por }); },
+      ['Cobro de préstamo', `${nombreDe(l)} · ${rhMoney(m)} · ${dir?'liquidación '+rhMesLbl(per):'pago directo'}`]);
+    if(document.getElementById('overlayRH').classList.contains('open')) verDetalle(id);
+  }
+  async function deshacerPago(id){
+    const l = DATA.items.find(x=>x.id===id); if(!l || !(l.pagos||[]).length) return;
+    const u = l.pagos[l.pagos.length-1];
+    if(!confirm(`Quitar el último cobro (${rhMoney(u.monto)}, ${rhMesLbl(u.periodo)}) de ${nombreDe(l)}?`)) return;
+    await mutar(d=>{ const x = d.items.find(y=>y.id===id); if(x && x.pagos) x.pagos.pop(); }, ['Cobro de préstamo deshecho', `${nombreDe(l)} · ${rhMoney(u.monto)} · ${rhMesLbl(u.periodo)}`]);
+    verDetalle(id);
+  }
+  async function anular(id){
+    const l = DATA.items.find(x=>x.id===id); if(!l) return;
+    const mot = (prompt(`Motivo para anular el préstamo de ${nombreDe(l)} (${rhMoney(l.monto)}):`)||'').trim();
+    if(!mot) return;
+    await mutar(d=>{ const x = d.items.find(y=>y.id===id); if(x) x.anulado = { motivo:mot, ...quienModifico() }; }, ['Préstamo anulado', `${nombreDe(l)} · ${rhMoney(l.monto)} · ${mot}`]);
+    rhCerrarModal();
+  }
+  function resumenPortal(pid){
+    return DATA.items.filter(l=>l.pid===pid && !l.anulado).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).map(l=>({
+      fecha:l.fecha, monto:rhR2(l.monto), cuotas:l.cuotas, cuota:cuotaDe(l), inicio:l.inicio, pagado:pagado(l), saldo:saldo(l), cuotasPagas:cuotasPagas(l),
+      estado:estado(l), obs:l.obs||'', pagos:(l.pagos||[]).map(x=>({periodo:x.periodo, monto:x.monto, tipo:x.tipo}))
+    }));
+  }
+  async function init(){
+    if(!ui){
+      ui = true;
+      $('prestFecha').value = new Date().toISOString().slice(0,10);
+      $('prestInicio').value = rhMesHoy(); $('prestPeriodo').value = rhMesHoy();
+      $('prestMonto').addEventListener('input', recalcCuota); $('prestCuotas').addEventListener('input', recalcCuota);
+      $('prestBtnAgregar').addEventListener('click', agregar);
+      $('prestBtnDescReg').addEventListener('click', registrarDescuentos);
+      $('prestBtnDescExcel').addEventListener('click', exportarDescuentos);
+      $('prestBtnExportar').addEventListener('click', exportar);
+      $('prestPeriodo').addEventListener('change', ()=>{ renderKPIs(); renderDescuentos(); });
+      $('prestBuscar').addEventListener('input', renderLista); $('prestFiltro').addEventListener('change', renderLista);
+      const click = e=>{
+        const a = e.target.closest('[data-prdet]'); if(a){ verDetalle(a.dataset.prdet); return; }
+        const b = e.target.closest('[data-prpago]'); if(b){ registrarPago(b.dataset.prpago); return; }
+        const c = e.target.closest('[data-pranular]'); if(c){ anular(c.dataset.pranular); return; }
+        const d = e.target.closest('[data-prdeshacer]'); if(d){ deshacerPago(d.dataset.prdeshacer); return; }
+      };
+      $('prestLista').addEventListener('click', click); $('rhModalCuerpo').addEventListener('click', click);
+    }
+    rhOpcionesPersonal($('prestEmp'), true);
+    await cargar(); render();
+  }
+  return { init, render, asegurar, resumenPortal };
+})();
+
+// ---------------------------------------------------------------------
+const PortalRRHH = (function(){
+  let PED = [], PORTAL = null, BLANQ = {}, ui = false, cargadoPed = false;
+  const $ = id=>document.getElementById(id);
+  const puedePortal = () => ACCESO.esAdmin || puede('portal');
+  const cerrado = p => p.estado!=='pendiente';
+
+  async function cargarPedidos(){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=like.rrhh_sol_*&select=id,valor`,
+        { headers:{ 'apikey':SUPABASE_KEY, 'Authorization':`Bearer ${SUPABASE_KEY}` } });
+      if(!res.ok) return false;
+      const rows = await res.json();
+      PED = (rows||[]).map(r=>({ ...(r.valor||{}), id:r.id })).sort((a,b)=>String(b.creado||'').localeCompare(String(a.creado||'')));
+      cargadoPed = true; return true;
+    }catch(e){ return false; }
+  }
+  async function cargarPortal(){
+    const r = await leerFilaEstricta(PORTAL_ROW_ID); if(r.ok) PORTAL = r.valor || null;
+    const b = await leerFilaEstricta(BLANQ_ROW_ID); if(b.ok) BLANQ = b.valor || {};
+    return r.ok;
+  }
+  // los pedidos se guardan uno por registro: se relee el último estado antes de escribir
+  async function guardarPedido(id, cambios){
+    const r = await leerFilaEstricta(id);
+    if(!r.ok || !r.valor){ alert('No se pudo leer el pedido. Probá de nuevo.'); return false; }
+    if(r.valor.estado!=='pendiente'){ alert('Ese pedido ya no está pendiente (el empleado lo canceló o alguien ya lo resolvió).'); await refrescar(); return false; }
+    const v = { ...r.valor, ...cambios };
+    const ok = await guardarFilaSupabase(id, v);
+    if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
+    const i = PED.findIndex(p=>p.id===id); if(i>=0) PED[i] = { ...v, id };
+    return true;
+  }
+  const resuelto = (nota) => ({ resuelto:{ por:(ACCESO.usuario||{}).nombre||'', fecha:new Date().toISOString(), nota:nota||'' } });
+
+  // ---- publicar lo que ve el empleado ----
+  function datosPortal(p){
+    const d = datosEfectivos(p), out = {};
+    Object.keys(DATOS_CAMPOS).forEach(k=>{ if(d[k]!=null && d[k]!=='') out[k] = String(d[k]); });
+    if(out.cuil) out.cuil = fmtCuil(out.cuil);
+    if(out.dni) out.dni = fmtDni(out.dni);
+    out.tieneDni = !!(soloDigitos(d.dni) || soloDigitos(d.cuil).length===11);
+    return out;
+  }
+  async function publicar(manual){
+    if(!rhPuedePublicar() || _rhPublicando) return false;
+    _rhPublicando = true;
+    try{
+      await Vac.asegurar(); await Prest.asegurar();
+      const verDatos = ACCESO.esAdmin || puede('datosVer') || puede('datosEditar');
+      if(verDatos) await asegurarDatos();
+      const r = await leerFilaEstricta(PORTAL_ROW_ID);
+      if(!r.ok){ if(manual) alert('No se pudo conectar para publicar. Probá de nuevo.'); return false; }
+      const prev = r.valor || {}, prevE = prev.empleados || {}, emps = {};
+      PERSONAL.filter(p=>!p.baja && p.legajo!=null && String(p.legajo).trim()!=='').forEach(p=>{
+        emps[p.id] = { legajo:p.legajo, nombre:p.nombre, empresa:p.empresa||'', sector:p.sector||'', gerencia:p.gerencia||'', categoria:p.categoria||'',
+          turno:p.turno||'', modalidad:p.modalidad||'', ingreso:p.ingreso||'', antig:p.antig==null?null:p.antig,
+          vac: Vac.resumenPortal(p), prestamos: Prest.resumenPortal(p.id),
+          datos: (verDatos && _datosCargados) ? datosPortal(p) : ((prevE[p.id] && prevE[p.id].datos) || {}) };
+      });
+      const config = { ...(prev.config||{}), feriados: Vac.feriadosActuales() };
+      const valor = { updatedAt:new Date().toISOString(), por:(ACCESO.usuario||{}).nombre||'', config, empleados:emps };
+      const ok = await guardarFilaSupabase(PORTAL_ROW_ID, valor);
+      if(ok){ PORTAL = valor; renderEstadoPub(); if(manual) registrarCambio('Portal del empleado', 'Publicación manual', `${Object.keys(emps).length} persona(s)`); }
+      else if(manual) alert('No se pudo publicar. Probá de nuevo.');
+      return ok;
+    } finally { _rhPublicando = false; }
+  }
+  async function mutarConfig(fn, desc){
+    const r = await leerFilaEstricta(PORTAL_ROW_ID);
+    if(!r.ok){ alert('No se pudo conectar para guardar. Probá de nuevo.'); return false; }
+    const v = r.valor || { empleados:{} }; v.config = v.config || {};
+    fn(v.config);
+    const ok = await guardarFilaSupabase(PORTAL_ROW_ID, v);
+    if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
+    PORTAL = v; if(desc) registrarCambio('Portal del empleado', desc[0], desc[1]);
+    if(!Object.keys(v.empleados||{}).length) publicar(false);
+    return true;
+  }
+
+  // ---- render ----
+  function renderEstadoPub(){
+    const el = $('portalEstadoPub'); if(!el) return;
+    el.textContent = PORTAL && PORTAL.updatedAt ? `Publicado ${tiempoRelativo(Date.parse(PORTAL.updatedAt))} · ${Object.keys(PORTAL.empleados||{}).length} personas` : 'Todavía no se publicó';
+  }
+  function visibles(){ return PED.filter(p=>{ const x = rhPersona(p.pid); return x ? personaPermitida(x) : ACCESO.esAdmin; }); }
+  function actualizarBadge(){
+    const btn = document.querySelector('.tab-btn[data-tab="portal"]'); if(!btn) return;
+    let b = btn.querySelector('.tab-badge'); if(!b){ b = document.createElement('span'); b.className = 'tab-badge'; btn.appendChild(b); }
+    const n = visibles().filter(p=>p.estado==='pendiente').length; b.textContent = n ? String(n) : '';
+  }
+  function renderKPIs(){
+    const V = visibles(), pend = V.filter(p=>p.estado==='pendiente');
+    const k = (lbl, val, sub, cls) => `<div class="kpi ${cls||''}"><div class="label">${lbl}</div><div class="value" style="font-size:24px">${val}</div><div class="sub">${sub||''}</div></div>`;
+    const mes = new Date().toISOString().slice(0,7);
+    $('portalKpis').innerHTML = k('Pedidos pendientes', pend.length, Object.entries(TIPOS_PEDIDO).map(([t,l])=>{ const n = pend.filter(p=>p.tipo===t).length; return n ? `${n} ${l.toLowerCase()}` : ''; }).filter(Boolean).join(' · ') || 'nada para revisar', pend.length?'warn':'') +
+      k('Vacaciones pedidas', pend.filter(p=>p.tipo==='vacaciones').length, 'esperando revisión de RRHH') +
+      k('Resueltos este mes', V.filter(p=>cerrado(p) && p.resuelto && String(p.resuelto.fecha).startsWith(mes)).length, 'aprobados, respondidos o rechazados') +
+      k('En el portal', PORTAL ? Object.keys(PORTAL.empleados||{}).length : 0, PORTAL && PORTAL.updatedAt ? 'actualizado '+tiempoRelativo(Date.parse(PORTAL.updatedAt)) : 'sin publicar');
+  }
+  function detalleHtml(p){
+    const d = p.datos || {};
+    if(p.tipo==='vacaciones'){
+      const al = Vac.alertasPara({ pid:p.pid, desde:d.desde, hasta:d.hasta, dias:Number(d.dias)||0 });
+      const res = Vac.saldoDe(p.pid);
+      return `Del <b>${rhFecha(d.desde)}</b> al <b>${rhFecha(d.hasta)}</b> · <b>${escHtml(d.dias)}</b> días corridos${d.obs?`<br>Comentario: “${escHtml(d.obs)}”`:''}
+        ${res ? `<br><span class="muted">Ciclo ${escHtml(res.lbl)}: disponible ${res.disponible} · ya asignado ${res.asignado} · restante ${res.restante}</span>` : ''}
+        ${al.length ? `<div class="alerta" style="margin-top:4px">⚠ ${al.map(escHtml).join('<br>⚠ ')}</div>` : ''}`;
+    }
+    if(p.tipo==='datos'){
+      const per = rhPersona(p.pid), act = per ? datosEfectivos(per) : {};
+      const camp = d.campos || {};
+      return `<table style="margin:4px 0"><tr><th>Dato</th><th>Actual</th><th>Pide cambiar a</th></tr>${Object.keys(camp).map(k=>`<tr><td>${escHtml(DATOS_CAMPOS[k]||k)}</td><td class="cambio-old">${escHtml(act[k]||'—')}</td><td class="cambio-new">${escHtml(camp[k])}</td></tr>`).join('')}</table>${d.obs?`Comentario: “${escHtml(d.obs)}”`:''}`;
+    }
+    if(p.tipo==='ausencia') return `Del <b>${rhFecha(d.desde)}</b> al <b>${rhFecha(d.hasta)}</b> · motivo: <b>${escHtml(d.motivo||'')}</b>${d.obs?`<br>“${escHtml(d.obs)}”`:''}<br><span class="muted">Es un aviso: la novedad se carga como siempre en la grilla cuando llega el certificado o la fichada.</span>`;
+    if(p.tipo==='constancia') return `Pide: <b>${escHtml(d.que||'Constancia')}</b>${d.para?` · para presentar en: ${escHtml(d.para)}`:''}${d.obs?`<br>“${escHtml(d.obs)}”`:''}`;
+    return `“${escHtml(d.texto||d.obs||'')}”`;
+  }
+  function accionesHtml(p){
+    if(cerrado(p)) return '';
+    const b = [];
+    if(p.tipo==='vacaciones'){
+      if(ACCESO.esAdmin || puede('vacaciones')){
+        b.push(`<label class="chk">Imputar a <select data-pciclo="${p.id}" style="width:auto;padding:4px 6px">${Vac.htmlOpcionesCiclo(p.pid, (p.datos||{}).desde, '')}</select></label>`);
+        b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar y pasar a Vacaciones</button>`);
+      }
+      if(puede('vacAutorizar')) b.push(`<label class="chk"><input type="checkbox" data-paut="${p.id}" checked> autorizar también como jefe</label>`);
+    } else if(p.tipo==='datos'){
+      if(ACCESO.esAdmin || puede('datosEditar')) b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar y actualizar datos</button>`);
+    } else if(puedePortal()) b.push(`<button class="btn small" data-presp="${p.id}">Responder y cerrar</button>`);
+    const puedeRech = puedePortal() || (p.tipo==='vacaciones' && puede('vacaciones')) || (p.tipo==='datos' && puede('datosEditar'));
+    if(puedeRech) b.push(`<button class="btn danger small" data-prech="${p.id}">Rechazar</button>`);
+    return b.length ? `<div class="ped-acc">${b.join('')}</div>` : '<div class="note">No tenés permiso para resolver este pedido.</div>';
+  }
+  function renderLista(){
+    const q = ($('portalBuscar').value||'').toLowerCase().trim(), fe = $('portalFiltroEstado').value, ft = $('portalFiltroTipo').value;
+    const L = visibles().filter(p=>!fe || (fe==='pendiente' ? p.estado==='pendiente' : cerrado(p))).filter(p=>!ft || p.tipo===ft)
+      .filter(p=>!q || `${p.nombre||''} ${p.legajo||''}`.toLowerCase().includes(q));
+    $('portalInfo').textContent = `${L.length} pedido(s)`;
+    $('portalLista').innerHTML = L.length ? L.slice(0,200).map(p=>`
+      <div class="ped ${cerrado(p)?'cerrado':''}">
+        <div class="ped-head"><span><b>${escHtml(p.nombre||p.pid)}</b> <span class="muted mono">leg. ${escHtml(p.legajo==null?'':p.legajo)} · ${escHtml(empresaCorta(p.empresa||''))} · ${escHtml(p.sector||'')}</span></span>
+          <span><span class="tag">${escHtml(TIPOS_PEDIDO[p.tipo]||p.tipo)}</span> <span class="est ${p.estado}">${escHtml(ESTADOS_PEDIDO[p.estado]||p.estado)}</span> <span class="muted mono" style="font-size:11px">${rhFechaHora(p.creado)}</span></span></div>
+        <div class="ped-body">${detalleHtml(p)}${p.resuelto?`<div class="muted" style="margin-top:6px">${p.estado==='rechazada'?'Rechazó':'Resolvió'} ${escHtml(p.resuelto.por)} el ${rhFechaHora(p.resuelto.fecha)}${p.resuelto.nota?` — “${escHtml(p.resuelto.nota)}”`:''}</div>`:''}</div>
+        ${accionesHtml(p)}
+      </div>`).join('') : `<div class="empty-hint" style="padding:20px">${cargadoPed ? 'No hay pedidos con ese filtro.' : 'No se pudieron leer los pedidos. Tocá “Actualizar”.'}</div>`;
+  }
+  function renderConfig(){
+    const c = (PORTAL && PORTAL.config) || {};
+    $('portalRecibosUrl').value = c.recibosUrl || PORTAL_RECIBOS_DEF; $('portalRecibosTexto').value = c.recibosTexto || ''; $('portalContacto').value = c.contacto || '';
+    const hoy = new Date().toISOString().slice(0,10);
+    const av = (c.avisos||[]).slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+    $('portalAvisos').innerHTML = av.length ? `<table><tr><th>Aviso</th><th>Hasta</th><th></th></tr>${av.map(a=>`<tr ${a.hasta && a.hasta<hoy?'style="opacity:.5"':''}><td>${escHtml(a.texto)}</td><td class="mono">${a.hasta?rhFecha(a.hasta):'sin fecha'}${a.hasta && a.hasta<hoy?' (vencido)':''}</td><td><button class="btn secondary small" data-pavdel="${a.id}">Quitar</button></td></tr>`).join('')}</table>` : '<div class="empty-hint">No hay avisos.</div>';
+  }
+  function renderClaves(){
+    rhOpcionesPersonal($('portalSelBlanq'), true);
+    const sinDni = PERSONAL.filter(p=>!p.baja).filter(personaPermitida).filter(p=>{ const d = datosEfectivos(p); return !(soloDigitos(d.dni) || soloDigitos(d.cuil).length===11); });
+    const sinLeg = PERSONAL.filter(p=>!p.baja).filter(personaPermitida).filter(p=>p.legajo==null || String(p.legajo).trim()==='');
+    $('portalSinDni').innerHTML = (_datosCargados && sinDni.length ? `<div class="usr-aviso">Sin DNI ni CUIL cargado (no pueden entrar hasta que se cargue en Datos personales): ${sinDni.slice(0,40).map(p=>escHtml(p.nombre)).join(', ')}${sinDni.length>40?'…':''}</div>` : '') +
+      (sinLeg.length ? `<div class="usr-aviso">Sin legajo (no pueden entrar): ${sinLeg.map(p=>escHtml(p.nombre)).join(', ')}</div>` : '');
+    const L = Object.entries(BLANQ||{}).filter(([k])=>k!=='updatedAt').sort((a,b)=>String(b[1]).localeCompare(String(a[1]))).slice(0,30);
+    $('portalBlanqLista').innerHTML = L.length ? `<div class="note">Últimos blanqueos: ${L.map(([pid,f])=>`${escHtml((rhPersona(pid)||{}).nombre||pid)} (${rhFecha(f)})`).join(' · ')}</div>` : '';
+  }
+  function render(){
+    if(!ui) return;
+    document.body.classList.toggle('sin-portal', !puedePortal());
+    renderEstadoPub(); renderKPIs(); renderLista(); actualizarBadge();
+    if($('psub-config').classList.contains('active')) renderConfig();
+    if($('psub-claves').classList.contains('active')) renderClaves();
+  }
+  function setSub(n){
+    document.querySelectorAll('#tab-portal .sub-btn').forEach(b=>b.classList.toggle('active', b.dataset.psub===n));
+    document.querySelectorAll('#tab-portal .subpanel').forEach(p=>p.classList.toggle('active', p.id==='psub-'+n));
+    if(n==='config') renderConfig(); if(n==='claves') renderClaves();
+  }
+  async function refrescar(){ await Promise.all([cargarPedidos(), cargarPortal()]); render(); }
+
+  // ---- acciones ----
+  async function aprobar(id){
+    const p = PED.find(x=>x.id===id); if(!p) return;
+    const d = p.datos || {}, per = rhPersona(p.pid);
+    if(!per){ alert('La persona ya no figura en el listado de personal.'); return; }
+    if(p.tipo==='vacaciones'){
+      const chk = document.querySelector(`[data-paut="${CSS.escape(id)}"]`), aut = !!(chk && chk.checked && puede('vacAutorizar'));
+      const selC = document.querySelector(`[data-pciclo="${CSS.escape(id)}"]`), ciclo = selC && selC.value ? Number(selC.value) : null;
+      const al = Vac.alertasPara({ pid:p.pid, desde:d.desde, hasta:d.hasta, dias:Number(d.dias)||0, ciclo: ciclo==null ? undefined : ciclo });
+      if(!confirm(`Pasar a Vacaciones el pedido de ${per.nombre}: ${rhFecha(d.desde)} al ${rhFecha(d.hasta)} (${d.dias} días)${ciclo!=null?`, imputadas al ciclo ${ciclo}/${String(ciclo+1).slice(2)}`:''}.${aut?`\nQueda AUTORIZADA a nombre de ${ACCESO.usuario.nombre}.`:'\nQueda pendiente de autorización del jefe en la pestaña Vacaciones.'}${al.length?`\n\nObservaciones:\n• ${al.join('\n• ')}`:''}`)) return;
+      const nota = al.length ? (prompt('Comentario para el empleado (opcional):')||'').trim() : '';
+      const ok = await Vac.agregarExterna({ pid:p.pid, desde:d.desde, hasta:d.hasta, dias:Number(d.dias)||0, obs:`Pedido desde el portal${d.obs?': '+d.obs:''}`, autorizar:aut, solRef:id, ciclo });
+      if(!ok) return;
+      if(await guardarPedido(id, { estado:'aprobada', ...resuelto(nota || (aut ? 'Autorizadas.' : 'Cargadas en vacaciones; falta la firma del jefe.')) })){
+        registrarCambio('Portal del empleado', 'Vacaciones aprobadas', `${per.nombre} · ${rhFecha(d.desde)} a ${rhFecha(d.hasta)}${aut?' · autorizadas':''}`);
+        portalProgramarPublicacion();
+        if(aut && confirm('Vacaciones autorizadas. ¿Imprimir el formulario para que lo firme?')) Vac.imprimirPorRef(id);
+      }
+    } else if(p.tipo==='datos'){
+      const camp = {}; Object.entries(d.campos||{}).forEach(([k,v])=>{ if(CAMPOS_PORTAL.includes(k)) camp[k] = String(v).trim().slice(0,200); });
+      if(!Object.keys(camp).length){ alert('El pedido no trae datos válidos para cambiar.'); return; }
+      if(!confirm(`Actualizar los datos personales de ${per.nombre}:\n\n${Object.entries(camp).map(([k,v])=>`• ${DATOS_CAMPOS[k]||k}: ${v}`).join('\n')}`)) return;
+      const ok = await mutarDatos(x=>{ const e = x[p.pid] = x[p.pid] || {}; Object.assign(e, camp); });
+      if(!ok) return;
+      if(await guardarPedido(id, { estado:'aprobada', ...resuelto('Datos actualizados.') })){
+        registrarCambio('Datos personales', 'Cambio aprobado desde el portal', `${per.nombre} · ${Object.keys(camp).map(k=>DATOS_CAMPOS[k]||k).join(', ')}`);
+        if(typeof renderPersonal==='function') renderPersonal();
+        portalProgramarPublicacion();
+      }
+    }
+    render();
+  }
+  // respuestas predefinidas (lista desplegable) + texto libre opcional
+  const RESPUESTAS = {
+    ausencia: ['Recibido. Queda registrada como ausencia programada.', 'Recibido. Acordate de entregar el certificado / constancia en RRHH.', 'Recibido. Avisale también a tu jefe directo.'],
+    constancia: ['Ya está lista, pasá a retirarla por RRHH.', 'Te la enviamos por mail.', 'La vas a tener en 48 hs hábiles.'],
+    consulta: ['Pasá por RRHH y lo vemos personalmente.', 'Consultalo con tu jefe directo.', 'Te lo respondemos por mail.'],
+    otros: ['Recibido.', 'Pasá por RRHH y lo vemos personalmente.']
+  };
+  const MOTIVOS_RECHAZO = {
+    vacaciones: ['Las fechas no están disponibles por la planificación del sector.', 'No tenés días suficientes en el ciclo.', 'Las vacaciones tienen que empezar un lunes hábil.', 'Hablalo con tu jefe directo y volvé a pedirlas.'],
+    datos: ['Para este cambio tenés que presentar la documentación en RRHH.', 'Los datos no coinciden con la documentación.'],
+    otros: ['Faltan datos o documentación.', 'Pasá por RRHH y lo vemos personalmente.']
+  };
+  function pedirTexto(titulo, opciones, obligatorio){
+    return new Promise(res=>{
+      rhModal(titulo, `<div class="field"><label>Respuesta</label><select id="rhRespSel">${opciones.map(o=>`<option>${escHtml(o)}</option>`).join('')}<option value="__otro">Otra (escribir)…</option></select></div>
+        <div class="field"><label>Agregar un comentario (opcional)</label><textarea id="rhRespTxt" maxlength="400"></textarea></div>
+        <div class="ped-acc"><button class="btn" id="rhRespOk">Enviar</button><button class="btn secondary" id="rhRespCancel">Cancelar</button></div><div class="note" id="rhRespErr" style="color:var(--danger)"></div>`);
+      const fin = v=>{ rhCerrarModal(); res(v); };
+      document.getElementById('rhRespCancel').onclick = ()=>fin(null);
+      document.getElementById('rhModalCerrar').onclick = ()=>fin(null);
+      document.getElementById('rhRespOk').onclick = ()=>{
+        const s = document.getElementById('rhRespSel').value, t = document.getElementById('rhRespTxt').value.trim();
+        const txt = s==='__otro' ? t : (t ? `${s} ${t}` : s);
+        if(!txt && obligatorio){ document.getElementById('rhRespErr').textContent = 'Escribí la respuesta.'; return; }
+        fin(txt);
+      };
+    });
+  }
+  async function responder(id){
+    const p = PED.find(x=>x.id===id); if(!p) return;
+    const t = await pedirTexto(`Responder a ${p.nombre} · ${TIPOS_PEDIDO[p.tipo]||p.tipo}`, RESPUESTAS[p.tipo] || RESPUESTAS.otros, true);
+    document.getElementById('rhModalCerrar').onclick = rhCerrarModal;
+    if(t===null) return;
+    if(await guardarPedido(id, { estado:'resuelta', ...resuelto(t) })) registrarCambio('Portal del empleado', 'Pedido respondido', `${p.nombre} · ${TIPOS_PEDIDO[p.tipo]||p.tipo} · ${t}`);
+    render();
+  }
+  async function rechazar(id){
+    const p = PED.find(x=>x.id===id); if(!p) return;
+    const t = await pedirTexto(`Rechazar el pedido de ${p.nombre} · ${TIPOS_PEDIDO[p.tipo]||p.tipo}`, MOTIVOS_RECHAZO[p.tipo] || MOTIVOS_RECHAZO.otros, true);
+    document.getElementById('rhModalCerrar').onclick = rhCerrarModal;
+    if(t===null) return;
+    if(await guardarPedido(id, { estado:'rechazada', ...resuelto(t) })) registrarCambio('Portal del empleado', 'Pedido rechazado', `${p.nombre} · ${TIPOS_PEDIDO[p.tipo]||p.tipo} · ${t}`);
+    render();
+  }
+  async function blanquear(){
+    const pid = $('portalSelBlanq').value; if(!pid) return;
+    const p = rhPersona(pid);
+    if(!confirm(`Blanquear la clave de ${p.nombre}? Va a entrar de nuevo con su legajo (${p.legajo}) y su DNI, y elegir un PIN nuevo.`)) return;
+    const r = await leerFilaEstricta(BLANQ_ROW_ID);
+    if(!r.ok){ alert('No se pudo conectar. Probá de nuevo.'); return; }
+    const v = r.valor || {}; v[pid] = new Date().toISOString();
+    if(!await guardarFilaSupabase(BLANQ_ROW_ID, v)){ alert('No se pudo guardar. Probá de nuevo.'); return; }
+    BLANQ = v; registrarCambio('Portal del empleado', 'Clave blanqueada', p.nombre); renderClaves();
+    alert(`Listo. ${p.nombre} ya puede entrar con legajo ${p.legajo} y su DNI.`);
+  }
+
+  function init(){
+    if(!ui){
+      ui = true;
+      $('portalBtnAbrir').href = PORTAL_URL;
+      $('portalFiltroTipo').innerHTML = '<option value="">Todos los tipos</option>' + Object.entries(TIPOS_PEDIDO).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+      document.querySelectorAll('#tab-portal .sub-btn').forEach(b=>b.addEventListener('click', ()=>setSub(b.dataset.psub)));
+      $('portalBtnRefrescar').addEventListener('click', refrescar);
+      $('portalBtnPublicar').addEventListener('click', async ()=>{ const b = $('portalBtnPublicar'); b.disabled = true; b.textContent = 'Publicando…'; const ok = await publicar(true); b.disabled = false; b.textContent = ok ? 'Publicado ✓' : 'Publicar al portal'; setTimeout(()=>{ b.textContent = 'Publicar al portal'; }, 2000); render(); });
+      $('portalBuscar').addEventListener('input', renderLista);
+      $('portalFiltroEstado').addEventListener('change', renderLista); $('portalFiltroTipo').addEventListener('change', renderLista);
+      $('portalLista').addEventListener('click', e=>{
+        const a = e.target.closest('[data-paprobar]'); if(a){ aprobar(a.dataset.paprobar); return; }
+        const r = e.target.closest('[data-presp]'); if(r){ responder(r.dataset.presp); return; }
+        const x = e.target.closest('[data-prech]'); if(x){ rechazar(x.dataset.prech); return; }
+      });
+      $('portalBtnGuardarCfg').addEventListener('click', async ()=>{
+        const url = $('portalRecibosUrl').value.trim();
+        if(url && !/^https?:\/\//i.test(url)){ alert('El link tiene que empezar con https://'); return; }
+        const ok = await mutarConfig(c=>{ c.recibosUrl = url; c.recibosTexto = $('portalRecibosTexto').value.trim(); c.contacto = $('portalContacto').value.trim(); }, ['Configuración', 'Link de recibos / contacto']);
+        $('portalCfgMsg').textContent = ok ? 'Guardado ✓ (el portal ya lo muestra)' : '';
+      });
+      $('portalBtnAviso').addEventListener('click', async ()=>{
+        const t = $('portalAvisoTxt').value.trim(), h = $('portalAvisoHasta').value; if(!t) return;
+        if(await mutarConfig(c=>{ c.avisos = c.avisos || []; c.avisos.push({ id:'a'+Date.now().toString(36), texto:t, hasta:h||'', fecha:new Date().toISOString(), por:(ACCESO.usuario||{}).nombre||'' }); }, ['Aviso publicado', t])){
+          $('portalAvisoTxt').value=''; $('portalAvisoHasta').value=''; renderConfig(); }
+      });
+      $('portalAvisos').addEventListener('click', async e=>{ const b = e.target.closest('[data-pavdel]'); if(!b) return;
+        if(await mutarConfig(c=>{ c.avisos = (c.avisos||[]).filter(a=>a.id!==b.dataset.pavdel); }, ['Aviso quitado', ''])) renderConfig(); });
+      $('portalBtnBlanq').addEventListener('click', blanquear);
+    }
+    refrescar();
+  }
+  // al abrir el panel: contador de pedidos y, si hace más de una hora que no se publica, se republica solo
+  async function arranque(){
+    document.getElementById('rhModalCerrar').onclick = rhCerrarModal;
+    document.getElementById('overlayRH').addEventListener('click', e=>{ if(e.target.id==='overlayRH') rhCerrarModal(); });
+    if(puedeVerTab('portal')){ await cargarPedidos(); actualizarBadge(); }
+    if(rhPuedePublicar()){
+      await cargarPortal();
+      const viejo = !PORTAL || !PORTAL.updatedAt || (Date.now() - Date.parse(PORTAL.updatedAt)) > 3600*1000;
+      if(viejo) setTimeout(()=>publicar(false).catch(()=>{}), 8000);
+    }
+  }
+  return { init, render, publicar, arranque, refrescar };
+})();
 
 // =====================================================================
 // ====== MATRIZ DE POLIVALENCIA ======
