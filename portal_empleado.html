@@ -278,7 +278,7 @@ function vVacaciones(){
       <button class="btn" onclick="mostrar('pedirVac')">Pedir vacaciones</button></div>
     ${pedVac.length ? `<h3>Pedidos esperando respuesta de RRHH</h3><div class="card">${pedVac.map(p=>`<div class="row"><span>${fmtFC(p.datos.desde)} al ${fmtFC(p.datos.hasta)} · ${esc(p.datos.dias)} días</span><span class="est pendiente">Pendiente</span></div>`).join('')}</div>` : ''}
     <h3>Vacaciones cargadas</h3><div class="card">${sols.length ? sols.map(s=>`<div class="row"><span>${fmtFC(s.desde)} al ${fmtFC(s.hasta)}<br><span class="muted small">${esc(s.dias)} días · ciclo ${esc(s.ciclo)}${s.descuenta?` · usa ${esc(s.descuenta)}`:''}</span></span>
-      <span class="r"><span class="est ${s.estado}">${s.estado==='autorizada'?'Autorizada':s.estado==='cancelada'?'Cancelada':'Falta autorizar'}</span>${s.autorizo?`<br><span class="muted small">${esc(nomTitulo(s.autorizo))}</span>`:''}</span></div>`).join('') : '<p class="muted small" style="margin:0">Todavía no tenés vacaciones cargadas en este ciclo.</p>'}</div>
+      <span class="r"><span class="est ${s.estado}">${s.estado==='autorizada'?'Autorizada':s.estado==='cancelada'?'Cancelada':'Falta autorizar'}</span>${s.autorizo?`<br><span class="muted small">${esc(nomTitulo(s.autorizo))}</span>`:(s.autoriza?`<br><span class="muted small">la autoriza ${esc(nomTitulo(s.autoriza))}</span>`:'')}</span></div>`).join('') : '<p class="muted small" style="margin:0">Todavía no tenés vacaciones cargadas en este ciclo.</p>'}</div>
     <h3>Saldo por ciclo</h3><div class="card"><table class="c"><tr><th>Ciclo</th><th class="n">Corresp.</th><th class="n">Tomado</th><th class="n">Pendiente</th></tr>
       ${(v.ciclos||[]).map(c=>`<tr><td>${esc(c.lbl)}</td><td class="n">${esc(c.corr)}</td><td class="n">${esc(c.tomado)}</td><td class="n"><b>${esc(c.pend)}</b></td></tr>`).join('')}
       <tr><td><b>Total pendiente</b></td><td></td><td></td><td class="n"><b>${esc(v.pendienteTotal??0)}</b></td></tr></table></div>` + pie();
@@ -361,7 +361,7 @@ function vDatos(){
   const e = E(), d = e.datos || {};
   const fila = (t,v) => `<div class="row"><span class="muted">${t}</span><span class="r">${v ? esc(v) : '<span class="muted">—</span>'}</span></div>`;
   $('#app').innerHTML = volver() + `<h2>Mis datos</h2>
-    <h3>Laborales</h3><div class="card">${fila('Nombre', nomTitulo(e.nombre))}${fila('Legajo', e.legajo)}${fila('Empresa', e.empresa)}${fila('Sector', nomTitulo(e.sector))}${fila('Categoría', e.categoria)}${fila('Turno', e.turno)}${fila('Fecha de ingreso', fmtF(e.ingreso))}${e.antig!=null?fila('Antigüedad', e.antig+' año'+(e.antig===1?'':'s')):''}</div>
+    <h3>Laborales</h3><div class="card">${fila('Nombre', nomTitulo(e.nombre))}${fila('Legajo', e.legajo)}${fila('Empresa', e.empresa)}${fila('Sector', nomTitulo(e.sector))}${fila('Categoría', e.categoria)}${e.jefe?fila('Jefe directo', nomTitulo(e.jefe)):''}${fila('Turno', e.turno)}${fila('Fecha de ingreso', fmtF(e.ingreso))}${e.antig!=null?fila('Antigüedad', e.antig+' año'+(e.antig===1?'':'s')):''}</div>
     <h3>Personales</h3><div class="card">${fila('DNI', d.dni)}${fila('CUIL', d.cuil)}${fila('Fecha de nacimiento', fmtF(d.nac))}${Object.entries(CAMPOS).map(([k,t])=>fila(t, d[k])).join('')}</div>
     <button class="btn" onclick="mostrar('pedirDatos')">Pedir un cambio de datos</button>
     <div class="info">Si cambiaste de domicilio, teléfono o tuviste un hijo, avisá acá. RRHH lo revisa y lo actualiza. Para corregir DNI, CUIL o fecha de nacimiento acercate a RRHH con el documento.</div>` + pie();

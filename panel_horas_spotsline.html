@@ -352,6 +352,28 @@
   #tblRopaTalles input[type=checkbox], #tblRopaEntregas input[type=checkbox]{width:16px; height:16px;}
   /* ====== ficha de la persona ====== */
   .ficha-modal{max-width:820px; width:94vw; max-height:90vh; overflow:auto;}
+  .org-modal{max-width:1500px; width:96vw; max-height:92vh; overflow:auto;}
+  .org-modal h4{margin:18px 0 8px; font-size:12px; color:var(--muted); font-weight:650; text-transform:uppercase; letter-spacing:.04em;}
+  .org-tabs{display:flex; gap:6px; margin:4px 0 12px;}
+  .org-arbol{margin:6px 0 18px;}
+  .org-ul{list-style:none; margin:0 0 0 18px; padding:6px 0 0 16px; border-left:1px solid var(--line);}
+  .org-ul > li{position:relative; margin:8px 0;}
+  .org-ul > li::before{content:''; position:absolute; left:-16px; top:18px; width:14px; border-top:1px solid var(--line);}
+  .org-card{display:inline-block; background:var(--panel-2); border:1px solid var(--line); border-left:3px solid var(--amber); border-radius:8px; padding:8px 12px; min-width:220px;}
+  .org-card.raiz{border-left-color:var(--good);}
+  .org-nom{font-weight:700; cursor:pointer;}
+  .org-nom:not([data-pficha]){cursor:default;}
+  .org-meta{font-size:12px; color:var(--muted);}
+  .org-usr{font-size:11px; color:var(--good); margin-top:2px;}
+  .org-warn{font-size:11px; color:var(--danger);}
+  .org-sec{font-size:12px; font-weight:650; margin-bottom:4px;}
+  .org-sec span{color:var(--muted); font-weight:400;}
+  .org-gente{display:flex; flex-wrap:wrap; gap:4px;}
+  .org-chip{font-size:12px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:2px 9px; cursor:pointer;}
+  .org-chip:hover, .org-nom[data-pficha]:hover{border-color:var(--amber); color:var(--amber);}
+  .org-chip i{font-style:normal; color:var(--amber);}
+  .org-tbl select, .org-tbl input{max-width:320px; padding:4px 6px;}
+  .lnk{cursor:pointer; text-decoration:underline;}
   .ficha-chips{display:flex; gap:8px; margin:2px 0 6px;}
   .ficha-sec{border-top:1px solid var(--line); padding:12px 0 6px;}
   .ficha-sec h4{margin:0 0 10px; font-size:12px; color:var(--muted); font-weight:650; text-transform:none;}
@@ -1085,8 +1107,11 @@
         <button class="btn" id="btnPersAlta">+ Agregar persona</button>
         <button class="btn secondary" id="btnPersFichaBlanco" onclick="imprimirFichaIngreso(null)" title="Ficha de ingreso para completar a mano">🖨 Ficha de ingreso en blanco</button>
         <button class="btn secondary" id="btnPersExportar">Exportar a Excel</button>
+        <button class="btn secondary" id="btnPersOrg" title="Quién es el jefe directo de cada persona (quién autoriza sus vacaciones)">🏢 Organigrama</button>
         <button class="btn secondary" id="btnPersImportar">⭱ Importar listado (Excel)</button>
+        <button class="btn secondary" id="btnPersCategorias" title="Planilla de novedades de la quincena: toma la columna “Categoría Recibo” por legajo">⭱ Actualizar categorías (recibo)</button>
         <input type="file" id="persFile" accept=".xlsx" style="display:none">
+        <input type="file" id="persCatFile" accept=".xlsx,.xlsm,.xls" style="display:none">
       </div>
     </div>
     <div class="filter-note" id="persImportStatus"></div>
@@ -1240,6 +1265,7 @@
         <select id="vacFiltroEstado" style="max-width:240px;">
           <option value="">Todos los estados</option>
           <option value="faltaAut">Falta autorizar</option>
+          <option value="mias">Me toca autorizar (mi gente)</option>
           <option value="obs">Con observaciones</option>
           <option value="excep">Autorizadas con observaciones</option>
           <option value="ok">Autorizadas</option>
@@ -1784,6 +1810,7 @@
       <div class="field"><label>Fecha de ingreso</label><input type="date" id="persEdIngreso"></div>
       <div class="field" id="persEdNacWrap"><label>Fecha de nacimiento</label><input type="date" id="persEdNac" title="Se guarda con los datos personales (sensibles). Se usa para los cumpleaños de la pantalla de planta."></div>
       <div class="field"><label>Días de vacaciones que le corresponden</label><input type="number" id="persEdDiasVac" min="0"></div>
+      <div class="field" id="persEdJefeWrap" style="grid-column:1 / span 2;"><label>Jefe directo (autoriza sus vacaciones)</label><select id="persEdJefe"></select></div>
     </div>
     <label class="chk" style="margin:4px 0 6px;"><input type="checkbox" id="persEdDelegado"> <b>Delegado/a gremial</b> <span class="usr-hint">(figura como empleado/a de su sector en la grilla e indicadores; las horas gremiales se siguen reconociendo)</span></label>
     <label class="chk" style="margin:4px 0 6px;"><input type="checkbox" id="persEdPlanillaHab"> <b>Lleva planilla de habilidades</b> <span class="usr-hint">(matriz de polivalencia — corresponde a jornalizados y supervisores)</span></label>
@@ -1987,6 +2014,22 @@
 </div>
 
 <div id="ropaPrintArea"></div>
+
+<div class="overlay" id="overlayOrg">
+  <div class="modal org-modal">
+    <div class="modal-head">
+      <div><h3>Organigrama</h3><div class="meta">Jefe directo de cada persona: es quien autoriza sus vacaciones (o cualquiera más arriba en la cadena). Hacé clic en un nombre para ver su ficha.</div>
+        <div class="meta" id="orgYo" style="color:var(--good)"></div></div>
+      <button class="close" id="orgCerrarX">&times;</button>
+    </div>
+    <div class="org-tabs"><button class="btn secondary small sub-btn active" id="orgTabArbol">Lista</button><button class="btn secondary small sub-btn" id="orgTabGrafico">Gráfico</button><button class="btn secondary small sub-btn" id="orgTabConfig">⚙ Configurar jefes</button></div>
+    <div id="orgCuerpo"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="orgExportar">Exportar a Excel</button>
+      <button class="btn" id="orgCerrar">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <div class="overlay" id="overlayFicha">
   <div class="modal ficha-modal">
@@ -4249,7 +4292,7 @@ const ACCIONES_DEF = [
   {id:'premio',     label:'Editar el premio cuatrimestral (anotaciones, excepciones, cierre)'},
   {id:'personal',   label:'Editar el listado de personal (modalidad, empresa, importar Excel)'},
   {id:'vacaciones', label:'Cargar solicitudes de vacaciones'},
-  {id:'vacAutorizar', label:'Autorizar vacaciones (jefe) — solo del personal de su alcance de empresa/sector'},
+  {id:'vacAutorizar', label:'Autorizar vacaciones (jefe) — solo de la gente a su cargo según el organigrama'},
   {id:'ropa',       label:'Gestionar la entrega de ropa (talles, prendas, entregas e imprimir el formulario con DNI)'},
   {id:'datosVer',   label:'Ver datos personales (DNI, CUIL, domicilio, nacimiento, contacto)'},
   {id:'datosEditar',label:'Editar datos personales'},
@@ -4449,7 +4492,9 @@ async function boot(){
   const u = { id: a.user_id || 'portal', nombre: a.nombre || a.email || 'Usuario', rol: esAdmin ? 'admin' : 'usuario', activo: true,
               permisos: { tabs: cfg.tabs || [], empresas: cfg.empresas || [], sectores: cfg.sectores || [], acciones: cfg.acciones || {} } };
   aplicarUsuario(u, { version: 1, baseUrl: '', usuarios: [] });
+  ACCESO.email = (a && a.email) || '';
   await cargarPersonal();
+  await cargarOrg();
   document.getElementById('accesoOverlay').style.display = 'none';
   document.body.classList.remove('auth-pending');
   aplicarPermisosUI();
@@ -4776,6 +4821,7 @@ const PERS_COLS = [
   {k:'gerencia',  t:'Gerencia'},
   {k:'turno',     t:'Turno'},
   {k:'categoria', t:'Categoría'},
+  {k:'jefe',      t:'Jefe directo'},
   {k:'ingreso',   t:'Ingreso'},
   {k:'antig',     t:'Antig.', num:true},
   {k:'diasVac',   t:'Días vac.', num:true},
@@ -4810,7 +4856,7 @@ function personalVisible(){
 }
 function personalOrdenado(rows){
   const dir = PERS_VIEW.sortDir==='desc' ? -1 : 1, f = PERS_VIEW.sortField;
-  const val = p => f==='baja' ? ((p.baja && p.baja.fecha) || '') : p[f];
+  const val = p => f==='baja' ? ((p.baja && p.baja.fecha) || '') : f==='jefe' ? orgAutoriza(p.id) : p[f];
   const cmpVal = (a,b)=>{
     const x=val(a), y=val(b);
     if(typeof x==='number' || typeof y==='number') return (Number(x)||0)-(Number(y)||0);
@@ -4874,7 +4920,7 @@ function renderPersonal(){
     body += `<tr class="${p.baja?'baja-row':''}">
       <td class="num mono">${p.legajo==null?'—':p.legajo}</td><td class="name" data-pficha="${p.id}" title="Ver la ficha completa">${escHtml(p.nombre)}</td><td>${empCell}</td>
       <td>${escHtml(p.sector)}</td><td>${modCell}</td><td>${escHtml(p.gerencia||'')}</td><td>${escHtml(p.turno||'')}</td>
-      <td>${escHtml(p.categoria||'')}</td><td class="mono">${fmtFechaISO(p.ingreso)}</td>
+      <td>${escHtml(p.categoria||'')}</td><td style="font-size:12px; white-space:nowrap" title="${escHtml(orgTit(orgAutoriza(p.id)))}">${escHtml(orgCorto(orgAutoriza(p.id)))||'<span class="muted">—</span>'}${orgTieneExcepcion(p.id)?' <span title="Asignado a mano (no por sector)" style="color:var(--amber)">✎</span>':''}</td><td class="mono">${fmtFechaISO(p.ingreso)}</td>
       <td class="num">${p.antig==null?'':p.antig}</td><td class="num">${p.diasVac==null?'':p.diasVac}</td>
       ${PERS_VIEW.estado!=='activos' ? `<td style="white-space:normal; font-size:12px;">${escHtml(textoBaja(p))}</td>` : ''}
       ${acciones}</tr>`;
@@ -4884,6 +4930,7 @@ function renderPersonal(){
   document.getElementById('tblPersonal').innerHTML = thead + body;
   document.getElementById('persCount').textContent = `${rows.length} persona${rows.length===1?'':'s'}`;
   document.getElementById('btnPersImportar').style.display = editor ? '' : 'none';
+  document.getElementById('btnPersCategorias').style.display = editor ? '' : 'none';
   document.getElementById('btnPersAlta').style.display = editor ? '' : 'none';
   document.getElementById('persDatosBanner').style.display = (puede('datosEditar') && _datosCargados && Object.keys(DATOS).length===0) ? 'flex' : 'none';
   // listas de sugerencias para el editor
@@ -4895,8 +4942,8 @@ function renderPersonal(){
 
 function exportarPersonal(){
   const rows = personalOrdenado(personalVisible());
-  const aoa = [['Legajo','Apellido y nombre','Empresa','Sector','Modalidad de liquidación','Gerencia','Turno','Categoría','Ingreso','Antigüedad','Días de vacaciones','Estado','Fecha de baja','Motivo de baja']];
-  rows.forEach(p=>aoa.push([p.legajo==null?'':p.legajo,p.nombre,p.empresa,p.sector,p.modalidad,p.gerencia||'',p.turno||'',p.categoria||'',fmtFechaISO(p.ingreso),p.antig==null?'':p.antig,p.diasVac==null?'':p.diasVac,
+  const aoa = [['Legajo','Apellido y nombre','Empresa','Sector','Modalidad de liquidación','Gerencia','Turno','Categoría','Jefe directo','Ingreso','Antigüedad','Días de vacaciones','Estado','Fecha de baja','Motivo de baja']];
+  rows.forEach(p=>aoa.push([p.legajo==null?'':p.legajo,p.nombre,p.empresa,p.sector,p.modalidad,p.gerencia||'',p.turno||'',p.categoria||'',orgAutoriza(p.id),fmtFechaISO(p.ingreso),p.antig==null?'':p.antig,p.diasVac==null?'':p.diasVac,
     p.baja?'Baja':'Activo', p.baja?fmtFechaISO(p.baja.fecha):'', p.baja?[p.baja.motivo,p.baja.detalle].filter(Boolean).join(' — '):'']));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Personal');
@@ -4920,6 +4967,9 @@ function abrirEditorPersona(id){
   $('persEdTurno').value = p ? (p.turno||'') : '';
   $('persEdIngreso').value = p ? (p.ingreso||'') : '';
   $('persEdDiasVac').value = (p && p.diasVac!=null) ? p.diasVac : '';
+  { const js = p ? orgJefeSector(p) : '', exc = p && orgTieneExcepcion(p.id);
+    $('persEdJefe').innerHTML = `<option value="">Según su sector${p ? ` (${js ? orgTit(orgNombre(js)) : 'sin jefe asignado'})` : ''}</option>` + opcionesJefe(exc ? ORG.personas[p.id] : '__', p ? p.id : '');
+    $('persEdJefe').value = exc ? ORG.personas[p.id] : ''; }
   $('persEdSinRopa').checked = !!(p && p.sinRopa);
   $('persEdDelegado').checked = !!(p && p.delegadoGremial);
   $('persEdNacWrap').style.display = puede('datosEditar') ? '' : 'none';
@@ -4991,6 +5041,14 @@ async function guardarPersona(){
   });
   if(!ok) return;
   registrarCambio('Personal', nueva ? 'Alta de persona' : 'Edición de persona', detalleAud);
+  if(idFinal){
+    const jNuevo = document.getElementById('persEdJefe').value, jAntes = orgTieneExcepcion(idFinal) ? ORG.personas[idFinal] : '';
+    if(jNuevo !== jAntes){
+      if(jNuevo && orgCadenaCon(jNuevo, idFinal)) alert('El jefe directo no se cambió: esa elección arma una cadena circular.');
+      else await mutarOrg(o=>{ if(jNuevo) o.personas[idFinal] = jNuevo; else delete o.personas[idFinal]; },
+        [jNuevo ? 'Jefe directo asignado a mano' : 'Jefe directo: vuelve al del sector', `${campos.nombre} → ${jNuevo ? orgNombre(jNuevo) : (orgNombre(orgJefeSector({...campos}))||'sin jefe')}`]);
+    }
+  }
   // fecha de nacimiento: va a los datos personales (registro aparte); en el Registro queda el campo, no el valor
   if(puede('datosEditar') && idFinal){
     try{
@@ -5183,6 +5241,9 @@ function initPersonalUI(){
   $('btnPersBannerImportar').addEventListener('click', ()=>$('persFile').click());
   $('btnPersAlta').addEventListener('click', ()=>{ if(puede('personal')) abrirEditorPersona(null); });
   $('persFile').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) importarListadoPersonal(f); e.target.value=''; });
+  $('btnPersCategorias').addEventListener('click', ()=>{ if(puede('personal')) $('persCatFile').click(); });
+  $('persCatFile').addEventListener('change', e=>{ const f=e.target.files[0]; if(f) importarCategoriasRecibo(f); e.target.value=''; });
+  initOrgUI();
   // modales
   $('persEdGuardar').addEventListener('click', guardarPersona);
   $('persEdCancelar').addEventListener('click', ()=>cerrar('overlayPersona'));
@@ -5228,6 +5289,400 @@ function initPersonalUI(){
   });
 }
 
+// ====== ORGANIGRAMA: jefe directo de cada persona (quién le autoriza las vacaciones) ======
+// Registro propio (organigrama_v1). El jefe sale del sector (empresa|sector) y se puede cambiar para
+// una persona puntual. Autoriza el jefe directo o cualquiera más arriba en la cadena (y el administrador).
+// Cada jefe se vincula a su usuario del Panel de Paneles; sin vínculo, se lo reconoce por el nombre.
+const ORG_ROW_ID = 'organigrama_v1';
+const ORG_DEFAULT = {
+  version:1,
+  externos:{ DIR:{ nombre:'PORCEL FACUNDO', cargo:'Director general' } },
+  cargos:{ 'SPT-145':'Jefe de producción' },
+  sectores:{
+    'SPOTSLINE SRL|ARMADO':'SPT-145', 'SPOTSLINE SRL|FABRICACION':'SPT-145', 'SPOTSLINE SRL|PINTURA':'SPT-145',
+    'SPOTSLINE SRL|EXPEDICION':'SPT-145', 'SPOTSLINE SRL|MANTENIMIENTO':'SPT-145', 'SPOTSLINE SRL|MATRICERIA':'SPT-145',
+    'SPOTSLINE SRL|CHOFER':'SPT-145', 'SPOTSLINE SRL|MAESTRANZA':'SPT-145',
+    'SPOTSLINE SRL|MANTENIMIENO Y MATRICERIA':'DIR', 'SPOTSLINE SRL|PCP':'DIR', 'SPOTSLINE SRL|JEFATURA':'DIR',
+    'SPOTSLINE SRL|RECEPCION':'SPT-51',
+    'SPOTSLINE SRL|VENDEDOR':'SPL-1', 'SPOTSLINE SRL|CONTAC CENTER':'SPL-1',
+    'SPL DISTRIBUIDORA|ADMINISTRACION':'SPL-1', 'SPL DISTRIBUIDORA|DEPOSITO':'DIR', 'SPL DISTRIBUIDORA|EXPEDICION':'DIR',
+  },
+  personas:{ 'SPL-1':'DIR' },
+  usuarios:{},
+};
+const orgCopia = o => JSON.parse(JSON.stringify(o));
+function orgNorm(v){
+  if(!v || typeof v!=='object') return orgCopia(ORG_DEFAULT);
+  return { ...v, version:1, externos:{...(v.externos||ORG_DEFAULT.externos)}, cargos:{...(v.cargos||{})},
+           sectores:{...(v.sectores||{})}, personas:{...(v.personas||{})}, usuarios:{...(v.usuarios||{})} };
+}
+let ORG = orgCopia(ORG_DEFAULT);
+let ORG_USUARIOS = null;   // usuarios del Panel de Paneles que tienen este panel (para vincular a los jefes)
+
+async function cargarOrg(){
+  const r = await leerFilaEstricta(ORG_ROW_ID);
+  ORG = orgNorm(r.ok ? r.valor : null);
+}
+async function mutarOrg(fn, aud){
+  const r = await leerFilaEstricta(ORG_ROW_ID);
+  if(!r.ok){ alert('No se pudo conectar para guardar. Probá de nuevo.'); return false; }
+  const data = orgNorm(r.valor);
+  const res = fn(data); if(res && res.error){ alert(res.error); return false; }
+  data.updatedAt = new Date().toISOString(); data.por = (ACCESO.usuario||{}).nombre || '';
+  const ok = await guardarFilaSupabase(ORG_ROW_ID, data);
+  if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
+  ORG = data;
+  if(aud) registrarCambio('Organigrama', aud[0], aud[1]);
+  portalProgramarPublicacion();
+  return true;
+}
+const orgTit = s => String(s||'').toLowerCase().replace(/(^|[\s(.-])\S/g, c=>c.toUpperCase());
+const orgSec = s => String(s||'').length<=3 ? String(s) : orgTit(s);
+const orgCorto = n => orgTit(String(n||'').split(/\s+/).slice(0,2).join(' '));
+const orgClaveSector = p => `${p.empresa||''}|${p.sector||''}`;
+const orgPersona = id => PERSONAL.find(x=>x.id===id) || null;
+const orgEsExterno = id => !!(id && ORG.externos[id]);
+function orgNombre(id){ if(!id) return ''; if(orgEsExterno(id)) return ORG.externos[id].nombre||id; const p = orgPersona(id); return p ? p.nombre : id; }
+function orgCargo(id){ if(orgEsExterno(id)) return ORG.externos[id].cargo||''; if(ORG.cargos[id]) return ORG.cargos[id]; const p = orgPersona(id); return p ? (p.categoria||'') : ''; }
+const orgJefeSector = p => ORG.sectores[orgClaveSector(p)] || '';
+const orgTieneExcepcion = id => Object.prototype.hasOwnProperty.call(ORG.personas, id);
+function orgJefeDe(id){
+  if(!id || orgEsExterno(id)) return '';
+  let j;
+  if(orgTieneExcepcion(id)) j = ORG.personas[id];
+  else { const p = orgPersona(id); if(!p) return ''; j = orgJefeSector(p); }
+  return (j && j!==id) ? j : '';
+}
+function orgCadena(id){
+  const out = []; let j = orgJefeDe(id);
+  while(j && j!==id && !out.includes(j) && out.length<15){ out.push(j); j = orgJefeDe(j); }
+  return out;
+}
+const orgAutoriza = pid => orgNombre(orgJefeDe(pid));
+// jefes = quienes tienen al menos una persona activa a cargo, más los de arriba (externos)
+function orgJefes(){
+  const s = new Set(Object.keys(ORG.externos));
+  PERSONAL.filter(p=>!esBaja(p)).forEach(p=>{ const j = orgJefeDe(p.id); if(j) s.add(j); });
+  return [...s];
+}
+// nodo del organigrama que corresponde al usuario que entró
+function orgMiNodo(){
+  const u = ACCESO.usuario; if(!u) return '';
+  const em = String(ACCESO.email||'').toLowerCase();
+  for(const [n,x] of Object.entries(ORG.usuarios)){
+    if(x && ((x.id && u.id && x.id===u.id) || (x.email && em && String(x.email).toLowerCase()===em))) return n;
+  }
+  const tk = normTokens(u.nombre||''); if(!tk.size) return '';
+  const cands = orgJefes().filter(n=>!ORG.usuarios[n]).filter(n=>{ const en = normTokens(orgNombre(n)); return [...tk].every(t=>en.has(t)); });
+  return cands.length===1 ? cands[0] : '';
+}
+// ¿el usuario es jefe (directo o superior) de esa persona?
+function orgEsSuJefe(pid){
+  const yo = orgMiNodo(); if(!yo || yo===pid) return false;
+  return orgEsExterno(yo) || orgCadena(pid).includes(yo);
+}
+function orgPuedeAutorizar(pid){
+  if(ACCESO.esAdmin) return true;
+  if(!puede('vacAutorizar')) return false;
+  return orgEsSuJefe(pid);
+}
+function orgMotivoNoAutoriza(pid){
+  const j = orgAutoriza(pid);
+  if(!puede('vacAutorizar') && !ACCESO.esAdmin) return 'Tu usuario no tiene el permiso "Autorizar vacaciones".';
+  if(!orgMiNodo()) return 'Tu usuario no está vinculado a ningún jefe del organigrama (Personal → Organigrama).';
+  return `No sos jefe de esta persona según el organigrama${j?`: la autoriza ${orgTit(j)} o alguien más arriba`:''}.`;
+}
+
+// ---- vista del organigrama ----
+let _orgVista = 'arbol';
+async function abrirOrganigrama(){
+  document.getElementById('overlayOrg').classList.add('open');
+  await cargarOrg();
+  renderOrganigrama();
+  if(puede('personal') && ORG_USUARIOS===null && window.PORTAL && typeof window.PORTAL.usuarios==='function'){
+    ORG_USUARIOS = [];
+    try{ const l = await window.PORTAL.usuarios(); ORG_USUARIOS = Array.isArray(l) ? l : []; }catch(e){ ORG_USUARIOS = []; }
+    if(_orgVista==='config') renderOrganigrama();
+  }
+}
+function orgHijos(nodo, activos){ return activos.filter(p=>orgJefeDe(p.id)===nodo); }
+function htmlNodoOrg(nodo, activos, nivel, visto){
+  if(visto.has(nodo) || nivel>12) return ''; visto.add(nodo);
+  const hijos = orgHijos(nodo, activos);
+  const jefesHijos = hijos.filter(h=>activos.some(x=>orgJefeDe(x.id)===h.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const resto = hijos.filter(h=>!jefesHijos.includes(h));
+  const porSector = {}; resto.forEach(h=>{ const k = (empresaCorta(h.empresa)==='SPL' ? 'SPL · ' : '') + (h.sector||'Sin sector'); (porSector[k] = porSector[k] || []).push(h); });
+  const total = (function cuenta(n, v){ let c = 0; activos.filter(p=>orgJefeDe(p.id)===n).forEach(p=>{ if(!v.has(p.id)){ v.add(p.id); c += 1 + cuenta(p.id, v); } }); return c; })(nodo, new Set([nodo]));
+  const u = ORG.usuarios[nodo];
+  const meta = [orgCargo(nodo), total ? `${total} persona${total===1?'':'s'} a cargo` : ''].filter(Boolean).join(' · ');
+  const persona = orgPersona(nodo);
+  const tarjeta = `<div class="org-card ${nivel===0?'raiz':''}"><div class="org-nom" ${persona?`data-pficha="${nodo}" title="Ver la ficha"`:''}>${escHtml(orgTit(orgNombre(nodo)))}</div>
+    <div class="org-meta">${escHtml(meta)}</div>${u?`<div class="org-usr">👤 ${escHtml(u.nombre||u.email||'usuario vinculado')}</div>`:''}${persona && esBaja(persona)?'<div class="org-warn">⚠ dado de baja</div>':''}</div>`;
+  const grupos = Object.keys(porSector).sort().map(sec=>`<li class="org-grupo"><div class="org-sec">${escHtml(orgSec(sec))} <span>(${porSector[sec].length})</span></div>
+      <div class="org-gente">${porSector[sec].sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(h=>`<span class="org-chip" data-pficha="${h.id}" title="${escHtml(h.categoria||'')}">${escHtml(orgTit(h.nombre))}${orgTieneExcepcion(h.id)?' <i title="Jefe asignado a mano (no por sector)">✎</i>':''}</span>`).join('')}</div></li>`).join('');
+  const subs = jefesHijos.map(h=>`<li>${htmlNodoOrg(h.id, activos, nivel+1, visto)}</li>`).join('');
+  return tarjeta + ((subs||grupos) ? `<ul class="org-ul">${subs}${grupos}</ul>` : '');
+}
+// personas activas que se muestran: las del alcance del usuario y los jefes de su cadena
+function orgVisibles(){
+  const activos = PERSONAL.filter(p=>!esBaja(p));
+  const enAlc = new Set(activos.filter(personaPermitida).map(p=>p.id));
+  return activos.filter(p=>enAlc.has(p.id) || activos.some(x=>orgCadena(x.id).includes(p.id) && enAlc.has(x.id)));
+}
+function renderArbolOrg(){
+  const visibles = orgVisibles();
+  const raices = Object.keys(ORG.externos);
+  const huerf = visibles.filter(p=>!orgJefeDe(p.id));
+  const ciclos = visibles.filter(p=>{ const c = orgCadena(p.id); return c.length && !orgEsExterno(c[c.length-1]) && orgJefeDe(c[c.length-1]); });
+  const visto = new Set();
+  let h = raices.map(r=>`<div class="org-arbol">${htmlNodoOrg(r, visibles, 0, visto)}</div>`).join('');
+  const sueltos = huerf.filter(p=>!visto.has(p.id) && !visibles.some(x=>orgJefeDe(x.id)===p.id));
+  const jefesSueltos = huerf.filter(p=>!visto.has(p.id) && visibles.some(x=>orgJefeDe(x.id)===p.id));
+  jefesSueltos.forEach(p=>{ h += `<div class="org-arbol">${htmlNodoOrg(p.id, visibles, 0, visto)}</div>`; });
+  if(sueltos.length) h = `<div class="usr-aviso">⚠ Sin jefe asignado (${sueltos.length}): ${sueltos.map(p=>`<span class="lnk" data-pficha="${p.id}">${escHtml(orgTit(p.nombre))}</span> <span class="muted">(${escHtml(orgTit(p.sector||''))})</span>`).join(', ')}. ${puede('personal')?'Asignales jefe en “Configurar”.':''} Hasta entonces solo las autoriza ${escHtml(orgTit(orgNombre(raices[0]||'')))} o un administrador.</div>` + h;
+  if(ciclos.length) h = `<div class="usr-aviso">⚠ Hay una cadena de jefes que se cierra sobre sí misma (${ciclos.slice(0,4).map(p=>escHtml(orgTit(p.nombre))).join(', ')}). Revisá la configuración.</div>` + h;
+  return h;
+}
+
+// ---- vista gráfica (organigrama clásico, de arriba hacia abajo) ----
+let _orgNombres = true;
+function htmlGrafNodo(nodo, activos, nivel, visto){
+  if(visto.has(nodo) || nivel>12) return ''; visto.add(nodo);
+  const hijos = activos.filter(p=>orgJefeDe(p.id)===nodo);
+  const esJefe = id => activos.some(x=>orgJefeDe(x.id)===id);
+  const subJefes = hijos.filter(h=>esJefe(h.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const resto = hijos.filter(h=>!subJefes.includes(h));
+  const total = (function cuenta(n, v){ let c = 0; activos.filter(p=>orgJefeDe(p.id)===n).forEach(p=>{ if(!v.has(p.id)){ v.add(p.id); c += 1 + cuenta(p.id, v); } }); return c; })(nodo, new Set([nodo]));
+  const persona = orgPersona(nodo), cargo = orgCargo(nodo);
+  const caja = `<div class="og-box jefe ${nivel===0?'raiz':''}"><div class="og-nom" ${persona?`data-pficha="${nodo}" title="Ver la ficha"`:''}>${escHtml(orgTit(orgNombre(nodo)))}</div>
+    ${cargo?`<div class="og-cargo">${escHtml(cargo)}</div>`:''}${total?`<div class="og-cant">${total} a cargo</div>`:''}</div>`;
+  const porSector = {}; resto.forEach(h=>{ const k = (empresaCorta(h.empresa)==='SPL' ? 'SPL · ' : '') + orgSec(h.sector||'Sin sector'); (porSector[k] = porSector[k] || []).push(h); });
+  const secs = Object.keys(porSector).sort();
+  const lista = k => _orgNombres ? `<div class="og-lista">${porSector[k].sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(h=>`<span class="og-n" data-pficha="${h.id}" title="${escHtml(h.categoria||'')}">${escHtml(orgCorto(h.nombre))}${orgTieneExcepcion(h.id)?' ✎':''}</span>`).join('')}</div>` : '';
+  let hojas = '';
+  if(secs.length && subJefes.length){
+    // si además tiene jefes debajo, su gente directa va en una sola caja (así no se ensancha de más)
+    hojas = `<li><div class="og-box sec"><div class="og-sec">A cargo directo · ${resto.length}</div>${secs.map(k=>`<div class="og-sub">${escHtml(k)} <span>(${porSector[k].length})</span></div>${lista(k)}`).join('')}</div></li>`;
+  } else {
+    hojas = secs.map(k=>`<li><div class="og-box sec"><div class="og-sec">${escHtml(k)} <span>(${porSector[k].length})</span></div>${lista(k)}</div></li>`).join('');
+  }
+  const subs = subJefes.map(h=>`<li>${htmlGrafNodo(h.id, activos, nivel+1, visto)}</li>`).join('');
+  return caja + ((subs||hojas) ? `<ul>${subs}${hojas}</ul>` : '');
+}
+function htmlGraficoOrg(){
+  const visibles = orgVisibles(), visto = new Set();
+  const raices = Object.keys(ORG.externos);
+  let h = raices.map(r=>`<ul class="og"><li>${htmlGrafNodo(r, visibles, 0, visto)}</li></ul>`).join('');
+  const sueltos = visibles.filter(p=>!visto.has(p.id) && !orgJefeDe(p.id));
+  if(sueltos.length) h += `<div class="usr-aviso" style="margin-top:12px">⚠ Sin jefe asignado: ${sueltos.map(p=>escHtml(orgTit(p.nombre))).join(', ')}</div>`;
+  return h;
+}
+function renderGraficoOrg(){
+  return `<div class="og-bar"><label class="chk"><input type="checkbox" id="orgVerNombres" ${_orgNombres?'checked':''}> Mostrar nombres</label>
+    <button class="btn secondary small" id="orgImprimir">🖨 Imprimir / PDF</button><span class="note">Deslizá hacia los costados si no entra en la pantalla.</span></div>
+    <div class="og-wrap">${htmlGraficoOrg()}</div>`;
+}
+function imprimirOrganigrama(){
+  const w = window.open('', '_blank');
+  if(!w){ alert('El navegador bloqueó la ventana de impresión. Permití ventanas emergentes para este sitio.'); return; }
+  const css = `@page{size:A4 landscape;margin:8mm} body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0}
+    h1{font-size:16px;margin:0 0 2px} .pie{font-size:9px;color:#666;margin-bottom:10px}
+    ${OG_CSS.replace(/var\(--line\)/g,'#888').replace(/var\(--panel-2\)/g,'#fff').replace(/var\(--panel\)/g,'#fff').replace(/var\(--amber\)/g,'#c99a00').replace(/var\(--good\)/g,'#2e7d32').replace(/var\(--muted\)/g,'#555')}`;
+  w.document.open();
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Organigrama Spotsline</title><style>${css}</style></head><body>
+    <h1>Organigrama — Spotsline / SPL</h1><div class="pie">Jefe directo = quien autoriza las vacaciones · impreso el ${new Date().toLocaleDateString('es-AR')} desde el Panel de RRHH</div>
+    <div id="c" style="width:max-content">${htmlGraficoOrg()}</div>
+    <script>window.onload=()=>{ const c=document.getElementById('c'), og=c.querySelector('.og'), z=Math.min(1, 1040/Math.max(1, og ? og.scrollWidth : c.scrollWidth)); c.style.zoom = z.toFixed(3); setTimeout(()=>window.print(),150); }<\/script></body></html>`);
+  w.document.close();
+  registrarCambio('Organigrama', 'Organigrama impreso', '');
+}
+const OG_CSS = `
+  .og-wrap{overflow:auto; padding:6px 0 16px;}
+  .og, .og ul{display:flex; justify-content:center; list-style:none; margin:0; padding:18px 0 0; position:relative;}
+  .og{padding-top:0; width:max-content; min-width:100%;}
+  .og li{display:flex; flex-direction:column; align-items:center; position:relative; padding:18px 5px 0;}
+  .og > li{padding-top:0;}
+  .og li::before, .og li::after{content:''; position:absolute; top:0; right:50%; width:50%; height:18px; border-top:1px solid var(--line);}
+  .og li::after{right:auto; left:50%; border-left:1px solid var(--line);}
+  .og li:only-child::before, .og li:only-child::after{display:none;}
+  .og li:only-child{padding-top:0;}
+  .og li:first-child::before, .og li:last-child::after{border:0 none;}
+  .og li:last-child::before{border-right:1px solid var(--line); border-radius:0 6px 0 0;}
+  .og li:first-child::after{border-radius:6px 0 0 0;}
+  .og > li::before, .og > li::after{display:none;}
+  .og ul::before{content:''; position:absolute; top:0; left:50%; height:18px; border-left:1px solid var(--line);}
+  .og-box{background:var(--panel-2); border:1px solid var(--line); border-radius:8px; padding:7px 10px; text-align:center; min-width:140px; max-width:210px;}
+  .og-box.jefe{border-top:3px solid var(--amber);}
+  .og-box.raiz{border-top-color:var(--good); min-width:190px;}
+  .og-nom{font-weight:700; font-size:13px;}
+  .og-nom[data-pficha]{cursor:pointer;}
+  .og-cargo{font-size:11.5px; color:var(--muted);}
+  .og-cant{font-size:11px; color:var(--muted); margin-top:2px;}
+  .og-box.sec{border-style:dashed; text-align:left; font-size:12px; min-width:120px;}
+  .og-sec{font-weight:650; font-size:12px;}
+  .og-sub{font-weight:600; font-size:11.5px; margin-top:6px;}
+  .og-sec span, .og-sub span{color:var(--muted); font-weight:400;}
+  .og-lista{display:flex; flex-direction:column; margin-top:3px;}
+  .og-n{font-size:11.5px; line-height:1.45; cursor:pointer; white-space:nowrap;}
+  .og-n:hover, .og-nom[data-pficha]:hover{color:var(--amber);}
+  .og-bar{display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:8px;}
+  .org-tabs .sub-btn.active{border-color:var(--amber); color:var(--amber);}`;
+function opcionesJefe(actual, excluir){
+  const act = PERSONAL.filter(p=>!esBaja(p) && p.id!==excluir).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const jefes = new Set(orgJefes());
+  const op = (id, txt) => `<option value="${escHtml(id)}" ${id===actual?'selected':''}>${escHtml(txt)}</option>`;
+  return `<optgroup label="Arriba de todo">${Object.keys(ORG.externos).map(id=>op(id, `${orgTit(orgNombre(id))} — ${orgCargo(id)}`)).join('')}</optgroup>` +
+    `<optgroup label="Jefes actuales">${act.filter(p=>jefes.has(p.id)).map(p=>op(p.id, orgTit(p.nombre))).join('')}</optgroup>` +
+    `<optgroup label="Resto del personal">${act.filter(p=>!jefes.has(p.id)).map(p=>op(p.id, orgTit(p.nombre))).join('')}</optgroup>`;
+}
+function renderConfigOrg(){
+  const activos = PERSONAL.filter(p=>!esBaja(p));
+  const claves = {}; activos.forEach(p=>{ const k = orgClaveSector(p); claves[k] = (claves[k]||0)+1; });
+  Object.keys(ORG.sectores).forEach(k=>{ if(!(k in claves)) claves[k] = 0; });
+  const filasSec = Object.keys(claves).sort().map(k=>{ const [emp, sec] = k.split('|'); const j = ORG.sectores[k]||'';
+    return `<tr ${claves[k]?'':'style="opacity:.55"'}><td>${escHtml(empresaCorta(emp))}</td><td>${escHtml(sec)}</td><td class="num">${claves[k]}</td>
+      <td><select data-orgsec="${escHtml(k)}"><option value="">— Sin jefe —</option>${opcionesJefe(j, '')}</select></td></tr>`; }).join('');
+  const exc = Object.keys(ORG.personas).filter(id=>orgPersona(id)).sort((a,b)=>orgNombre(a).localeCompare(orgNombre(b)));
+  const filasExc = exc.map(id=>{ const p = orgPersona(id);
+    return `<tr><td>${escHtml(orgTit(p.nombre))}${esBaja(p)?' <span class="tag">baja</span>':''}</td><td>${escHtml(orgTit(p.sector||''))}</td><td>${escHtml(orgTit(orgNombre(orgJefeSector(p)))||'—')}</td>
+      <td><select data-orgper="${id}">${opcionesJefe(ORG.personas[id], id)}</select></td><td><button class="btn secondary small" data-orgperdel="${id}">Volver al del sector</button></td></tr>`; }).join('');
+  const sinExc = activos.filter(p=>!orgTieneExcepcion(p.id)).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  const users = ORG_USUARIOS || [];
+  const uid = x => String(x.user_id || x.id || ''), unom = x => x.nombre || x.email || uid(x);
+  const filasJefes = orgJefes().sort((a,b)=>(orgEsExterno(b)-orgEsExterno(a)) || orgNombre(a).localeCompare(orgNombre(b))).map(n=>{
+    const v = ORG.usuarios[n], auto = !v ? (users.length ? '' : '') : '';
+    const opts = `<option value="">${v ? '— Quitar vínculo —' : '— Sin vincular (se reconoce por el nombre) —'}</option>` +
+      users.map(x=>`<option value="${escHtml(uid(x))}" ${v && v.id===uid(x)?'selected':''}>${escHtml(unom(x))}${x.email && x.nombre?' · '+escHtml(x.email):''}</option>`).join('') +
+      (v && !users.some(x=>uid(x)===v.id) ? `<option value="${escHtml(v.id||'')}" selected>${escHtml(v.nombre||v.email||'vinculado')}</option>` : '');
+    return `<tr><td><b>${escHtml(orgTit(orgNombre(n)))}</b>${orgEsExterno(n)?' <span class="tag">no está en el listado</span>':''}${auto}</td>
+      <td><input type="text" data-orgcargo="${n}" value="${escHtml(orgCargo(n))}" placeholder="Cargo"></td>
+      <td><select data-orgusr="${n}">${opts}</select></td></tr>`; }).join('');
+  return `<div class="note" style="margin-bottom:10px">Los cambios se guardan al momento y quedan en el Registro de modificaciones. El permiso <b>Autorizar vacaciones</b> de cada jefe se da en Usuarios del Panel de Paneles.</div>
+    <h4>Jefe directo por sector</h4>
+    <div class="table-wrap"><table class="org-tbl"><thead><tr><th>Empresa</th><th>Sector</th><th class="num">Activos</th><th>Jefe directo</th></tr></thead><tbody>${filasSec}</tbody></table></div>
+    <h4>Personas con otro jefe que el de su sector</h4>
+    ${exc.length ? `<div class="table-wrap"><table class="org-tbl"><thead><tr><th>Persona</th><th>Sector</th><th>Jefe del sector</th><th>Su jefe directo</th><th></th></tr></thead><tbody>${filasExc}</tbody></table></div>` : '<div class="note">Nadie: todos tienen el jefe de su sector.</div>'}
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px;"><select id="orgExcPersona" style="max-width:320px"><option value="">Agregar excepción para…</option>${sinExc.map(p=>`<option value="${p.id}">${escHtml(orgTit(p.nombre))} (${escHtml(orgTit(p.sector||''))})</option>`).join('')}</select>
+      <select id="orgExcJefe" style="max-width:280px">${opcionesJefe('', '')}</select><button class="btn secondary small" id="orgExcAgregar">Agregar</button></div>
+    <h4>Jefes: cargo y usuario del panel</h4>
+    ${users.length ? '' : `<div class="note">${ORG_USUARIOS===null?'Cargando usuarios…':'No se pudo leer la lista de usuarios del Panel de Paneles: los jefes se reconocen por el nombre de su usuario.'}</div>`}
+    <div class="table-wrap"><table class="org-tbl"><thead><tr><th>Jefe</th><th>Cargo</th><th>Usuario que autoriza</th></tr></thead><tbody>${filasJefes}</tbody></table></div>`;
+}
+function renderOrganigrama(){
+  const $ = i=>document.getElementById(i);
+  const editor = puede('personal');
+  $('orgTabConfig').style.display = editor ? '' : 'none';
+  if(!editor && _orgVista==='config') _orgVista = 'arbol';
+  $('orgTabArbol').classList.toggle('active', _orgVista==='arbol'); $('orgTabGrafico').classList.toggle('active', _orgVista==='grafico'); $('orgTabConfig').classList.toggle('active', _orgVista==='config');
+  if(!document.getElementById('ogCss')){ const st = document.createElement('style'); st.id = 'ogCss'; st.textContent = OG_CSS; document.head.appendChild(st); }
+  const yo = orgMiNodo();
+  $('orgYo').textContent = yo ? `Entraste como ${orgTit(orgNombre(yo))}: podés autorizar las vacaciones de tu gente${puede('vacAutorizar')||ACCESO.esAdmin?'':' (te falta el permiso “Autorizar vacaciones”)'}.` : '';
+  $('orgCuerpo').innerHTML = _orgVista==='config' ? renderConfigOrg() : _orgVista==='grafico' ? renderGraficoOrg() : renderArbolOrg();
+}
+function exportarOrganigrama(){
+  const aoa = [['Legajo','Apellido y nombre','Empresa','Sector','Categoría','Jefe directo','Cadena hasta arriba','Jefe asignado']];
+  PERSONAL.filter(p=>!esBaja(p)).filter(personaPermitida).sort((a,b)=>a.nombre.localeCompare(b.nombre)).forEach(p=>{
+    aoa.push([p.legajo==null?'':p.legajo, p.nombre, p.empresa, p.sector, p.categoria||'', orgNombre(orgJefeDe(p.id)), orgCadena(p.id).map(orgNombre).join(' → '), orgTieneExcepcion(p.id)?'A mano':'Por sector']);
+  });
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(aoa), 'Organigrama'); XLSX.writeFile(wb, 'Organigrama_Spotsline.xlsx');
+}
+let _orgUIok = false;
+function initOrgUI(){
+  if(_orgUIok) return; _orgUIok = true;
+  const $ = i=>document.getElementById(i);
+  const cerrar = ()=>$('overlayOrg').classList.remove('open');
+  $('btnPersOrg').addEventListener('click', abrirOrganigrama);
+  $('orgCerrar').addEventListener('click', cerrar); $('orgCerrarX').addEventListener('click', cerrar);
+  $('orgExportar').addEventListener('click', exportarOrganigrama);
+  $('orgTabArbol').addEventListener('click', ()=>{ _orgVista='arbol'; renderOrganigrama(); });
+  $('orgTabConfig').addEventListener('click', ()=>{ _orgVista='config'; renderOrganigrama(); });
+  $('orgTabGrafico').addEventListener('click', ()=>{ _orgVista='grafico'; renderOrganigrama(); });
+  const cuerpo = $('orgCuerpo');
+  cuerpo.addEventListener('click', async e=>{
+    const f = e.target.closest('[data-pficha]'); if(f){ abrirFicha(f.dataset.pficha); return; }
+    if(e.target.id==='orgImprimir'){ imprimirOrganigrama(); return; }
+    if(!puede('personal')) return;
+    const d = e.target.closest('[data-orgperdel]');
+    if(d){ const id = d.dataset.orgperdel, p = orgPersona(id);
+      if(await mutarOrg(o=>{ delete o.personas[id]; }, ['Jefe directo: vuelve al del sector', `${p?p.nombre:id} → ${orgNombre(p?orgJefeSector(p):'')||'sin jefe'}`])) renderOrganigrama(); return; }
+    if(e.target.id==='orgExcAgregar'){
+      const id = $('orgExcPersona').value, j = $('orgExcJefe').value; if(!id || !j) { alert('Elegí la persona y su jefe directo.'); return; }
+      if(id===j || orgCadenaCon(j, id, j)){ alert('Ese cambio arma una cadena circular (la persona quedaría por encima de su propio jefe).'); return; }
+      if(await mutarOrg(o=>{ o.personas[id] = j; }, ['Jefe directo asignado a mano', `${orgNombre(id)} → ${orgNombre(j)}`])) renderOrganigrama();
+    }
+  });
+  cuerpo.addEventListener('change', async e=>{
+    if(e.target.id==='orgVerNombres'){ _orgNombres = e.target.checked; renderOrganigrama(); return; }
+    if(!puede('personal')) return;
+    const t = e.target, ds = t.dataset;
+    if(ds.orgsec!=null){ const k = ds.orgsec, v = t.value, [emp, sec] = k.split('|');
+      if(await mutarOrg(o=>{ if(v) o.sectores[k] = v; else delete o.sectores[k]; }, ['Jefe por sector', `${empresaCorta(emp)} · ${sec} → ${v?orgNombre(v):'sin jefe'}`])) renderOrganigrama(); }
+    else if(ds.orgper!=null){ const id = ds.orgper, v = t.value;
+      if(orgCadenaCon(v, id, v)){ alert('Ese cambio arma una cadena circular.'); renderOrganigrama(); return; }
+      if(await mutarOrg(o=>{ o.personas[id] = v; }, ['Jefe directo asignado a mano', `${orgNombre(id)} → ${orgNombre(v)}`])) renderOrganigrama(); }
+    else if(ds.orgcargo!=null){ const n = ds.orgcargo, v = t.value.trim();
+      if(await mutarOrg(o=>{ if(o.externos[n]) o.externos[n].cargo = v; else if(v) o.cargos[n] = v; else delete o.cargos[n]; }, ['Cargo', `${orgNombre(n)}: ${v||'(según categoría)'}`])) renderOrganigrama(); }
+    else if(ds.orgusr!=null){ const n = ds.orgusr, v = t.value;
+      const x = (ORG_USUARIOS||[]).find(u=>String(u.user_id||u.id||'')===v);
+      if(await mutarOrg(o=>{ if(v){ Object.keys(o.usuarios).forEach(k=>{ if(o.usuarios[k] && o.usuarios[k].id===v) delete o.usuarios[k]; }); o.usuarios[n] = { id:v, nombre:x?(x.nombre||''):'', email:x?(x.email||''):'' }; } else delete o.usuarios[n]; },
+        ['Usuario de jefe', `${orgNombre(n)} → ${v ? ((x&&(x.nombre||x.email))||v) : 'sin vincular'}`])) renderOrganigrama(); }
+  });
+}
+// ¿poner a "jefe" como jefe de "id" arma un círculo? (el jefe tendría a "id" en su propia cadena)
+function orgCadenaCon(jefe, id){
+  if(!jefe || orgEsExterno(jefe)) return false;
+  if(jefe===id) return true;
+  return orgCadena(jefe).includes(id);
+}
+
+// ---- categorías desde el recibo (planilla de novedades de la quincena, hoja con "Categoría Recibo") ----
+const normCab = s => String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+function leerCategoriasRecibo(wb){
+  for(const nom of wb.SheetNames){
+    const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nom], {header:1, raw:true, defval:''});
+    for(let i=0; i<Math.min(aoa.length, 40); i++){
+      const fila = aoa[i].map(normCab), cL = fila.indexOf('LEGAJO'), cC = fila.indexOf('CATEGORIA RECIBO');
+      if(cL<0 || cC<0) continue;
+      const cN = fila.findIndex(x=>x.startsWith('APELLIDO')), out = [];
+      for(let r=i+1; r<aoa.length; r++){
+        const leg = parseInt(aoa[r][cL],10), cat = String(aoa[r][cC]==null?'':aoa[r][cC]).replace(/\s+/g,' ').trim();
+        if(!leg || !cat || cat==='0' || /^#/.test(cat)) continue;
+        out.push({ legajo:leg, nombre: cN>=0 ? String(aoa[r][cN]||'') : '', categoria:cat });
+      }
+      if(out.length) return { hoja:nom, filas:out };
+    }
+  }
+  throw new Error('No encontré una hoja con las columnas "Legajo" y "Categoría Recibo".');
+}
+async function importarCategoriasRecibo(file){
+  const st = document.getElementById('persImportStatus');
+  st.style.color = 'var(--muted)'; st.textContent = 'Leyendo categorías…';
+  try{
+    const wb = XLSX.read(await file.arrayBuffer(), {type:'array'});
+    const { hoja, filas } = leerCategoriasRecibo(wb);
+    const activos = PERSONAL.filter(p=>!esBaja(p));
+    const cambios = [], sinMatch = [];
+    filas.forEach(f=>{
+      const tk = [...normTokens(f.nombre)].filter(t=>t.length>2);
+      const cands = activos.filter(p=>Number(p.legajo)===f.legajo).map(p=>({ p, sc: tk.filter(t=>normTokens(p.nombre).has(t)).length })).filter(x=>!tk.length || x.sc>0).sort((a,b)=>b.sc-a.sc);
+      if(!cands.length){ sinMatch.push(`${f.legajo} ${f.nombre}`.trim()); return; }
+      const p = cands[0].p;
+      if(String(p.categoria||'').trim().toLowerCase() !== f.categoria.toLowerCase()) cambios.push({ id:p.id, nombre:p.nombre, antes:p.categoria||'', despues:f.categoria });
+    });
+    if(!cambios.length){ st.style.color = 'var(--good)'; st.textContent = `Categorías al día: las ${filas.length} de “${hoja}” ya coinciden con el panel.${sinMatch.length?` Sin encontrar en el listado: ${sinMatch.join(', ')}.`:''}`; return; }
+    const lista = cambios.map(c=>`• ${c.nombre}: ${c.antes||'—'} → ${c.despues}`).join('\n');
+    if(!confirm(`Se van a actualizar ${cambios.length} categoría(s) (hoja “${hoja}”):\n\n${lista}${sinMatch.length?`\n\nNo encontrados en el listado: ${sinMatch.join(', ')}`:''}\n\n¿Confirmás?`)){ st.textContent = 'Actualización de categorías cancelada.'; return; }
+    const ok = await mutarPersonal(rows=>{
+      const meta = quienModifico();
+      cambios.forEach(c=>{ const p = rows.find(r=>r.id===c.id); if(!p) return; p.categoria = c.despues; p.ed = [...new Set([...(p.ed||[]), 'categoria'])]; p.mod = meta; });
+    });
+    if(!ok){ st.style.color = 'var(--danger)'; st.textContent = 'No se pudieron guardar las categorías.'; return; }
+    registrarCambio('Personal', 'Categorías actualizadas desde el recibo', `${file.name} (${hoja}): ` + cambios.map(c=>`${c.nombre}: ${c.antes||'—'} → ${c.despues}`).join(' · '));
+    st.style.color = 'var(--good)'; st.textContent = `Listo ✓ ${cambios.length} categoría(s) actualizada(s). Se ven en la ficha y en el portal del empleado (solo lectura).`;
+    renderPersonal();
+  }catch(err){ st.style.color = 'var(--danger)'; st.textContent = 'No se pudieron leer las categorías: ' + err.message; }
+}
+
 // ---- ficha de la persona (todo lo que hay de ella en un solo lugar) ----
 async function abrirFicha(id){
   const p = PERSONAL.find(x=>x.id===id); if(!p) return;
@@ -5268,6 +5723,8 @@ async function abrirFicha(id){
     <div class="ficha-chips">${chipModalidad(p.modalidad)} ${p.baja?'<span class="tag lost">BAJA</span>':'<span class="tag ok">ACTIVO</span>'}${p.sinRopa?' <span class="tag">NO RECIBE ROPA</span>':''}${llevaPlanillaHab(p)?' <span class="tag">PLANILLA DE HABILIDADES</span>':''}${p.delegadoGremial?' <span class="tag dg">DELEGADO/A GREMIAL</span>':''}</div>
     <div class="ficha-sec"><h4>Datos laborales</h4><div class="ficha-grid">
       ${dato('Gerencia', p.gerencia)}${dato('Categoría', p.categoria)}${dato('Turno', p.turno)}
+      ${dato('Jefe directo (autoriza vacaciones)', orgTit(orgAutoriza(p.id)) + (orgTieneExcepcion(p.id) ? ' (asignado a mano)' : ''))}
+      ${(()=>{ const n = PERSONAL.filter(x=>!esBaja(x) && orgCadena(x.id).includes(p.id)).length; return n ? dato('Personas a cargo', `${n} (${PERSONAL.filter(x=>!esBaja(x) && orgJefeDe(x.id)===p.id).length} directas)`) : ''; })()}
       ${dato('Fecha de ingreso', fmtFechaISO(p.ingreso))}${dato('Antigüedad', p.antig==null?'':`${p.antig} año${p.antig===1?'':'s'}`)}${dato('Días de vacaciones que le corresponden', p.diasVac)}
     </div></div>
     ${puede('datosVer') ? htmlDatosFicha(p) : ''}
@@ -5462,7 +5919,7 @@ const Vac = (function(){
   function estadoSol(s){
     const al = alertasDe(s), aut = s.autorizo;
     if(!('autorizo' in s)) return {k: al.length?'falta':'sinreg', al, txt: al.length?'⚠ Revisar':'Sin registro', tip: al.length ? 'Cargada antes de pedir autorización. Revisar: '+al.join(' · ') : 'Cargada antes de que el panel pidiera autorización del jefe'};
-    if(!aut) return {k:'falta', al, txt:'Falta autorizar', tip: 'Todavía no la autorizó el jefe' + (al.length ? '. Ojo: '+al.join(' · ') : '')};
+    if(!aut) return {k:'falta', al, txt:'Falta autorizar', tip: (orgAutoriza(s.pid) ? `Falta que la autorice ${orgTit(orgAutoriza(s.pid))} (o alguien más arriba)` : 'Todavía no la autorizó el jefe') + (al.length ? '. Ojo: '+al.join(' · ') : '')};
     const quien = `Autorizó ${aut.nombre} el ${fmtDisplay(aut.fecha.slice(0,10))}${aut.por && aut.por!==aut.nombre ? ` (cargado por ${aut.por})` : ''}`;
     if(al.length) return {k:'excep', al, txt:'Autorizada c/ obs.', tip: `${quien} aunque: ${al.join(' · ')}${aut.obs?' — '+aut.obs:''}`};
     return {k:'ok', al, txt:'✓ Autorizada', tip: quien};
@@ -5613,7 +6070,7 @@ const Vac = (function(){
   function botonesSol(it){
     if(it.cancelada) return esAdmin() ? `<button class="btn secondary small" data-vacreact="${it.id}">Reactivar</button> <button class="btn danger small" data-vacdel="${it.id}">Eliminar</button>` : '';
     let h = '';
-    if(puedeAutorizar()) h += it.autorizo ? `<button class="btn secondary small" data-vacdesaut="${it.id}">Quitar autorización</button> ` : `<button class="btn small" data-vacaut="${it.id}">Autorizar</button> `;
+    if(orgPuedeAutorizar(it.pid)) h += it.autorizo ? `<button class="btn secondary small" data-vacdesaut="${it.id}">Quitar autorización</button> ` : `<button class="btn small" data-vacaut="${it.id}">Autorizar</button> `;
     h += `<button class="btn secondary small" data-vacform="${it.id}" title="Imprimir el formulario para firmar">📄 Formulario</button> `;
     if(canEdit()) h += it.firmado ? `<button class="btn secondary small" data-vacfirma="${it.id}" title="Firmado: ${escHtml(it.firmado.por)} · ${fmtDisplay(String(it.firmado.fecha).slice(0,10))}" style="color:var(--good)">✓ Firmado</button> ` : `<button class="btn secondary small" data-vacfirma="${it.id}">Marcar firmado</button> `;
     if(canEdit()) h += `<button class="btn secondary small" data-vacper="${it.id}" title="Elegir de qué ciclo descuenta los días">Período${tieneCicloFijo(it)?' '+cicloLbl(Number(it.ciclo)):''}</button> `;
@@ -5659,7 +6116,7 @@ const Vac = (function(){
     const e = v => escHtml(v==null ? '' : String(v));
     const filas = imp.map(([y,d])=>`<tr><td>Vacaciones corresponden al AÑO: ${cicloLbl(y)}</td><td class="c">X</td><td class="c">${e(d)}</td><td class="c">${e(+(((sal.C[y]||{}).pend)||0).toFixed(1))}</td><td class="c">${fmtFechaISO(s.desde)}</td><td class="c">${fmtFechaISO(s.hasta)}</td></tr>`).join('')
       + Array.from({length:Math.max(0,5-imp.length)}).map(()=>'<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
-    const jefe = s.autorizo ? s.autorizo.nombre : '';
+    const jefe = orgTit(orgAutoriza(p.id)) || (s.autorizo ? s.autorizo.nombre : '');
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Solicitud de vacaciones — ${e(p.nombre)}</title>
     <style>
       @page{size:A4;margin:16mm 14mm}
@@ -5742,7 +6199,8 @@ const Vac = (function(){
     if(!dias || dias<=0){ msg('Los días deben ser un número mayor a 0.', true); return; }
     const fraccion = !!($('vacFracc') && $('vacFracc').checked && (puedeAutorizar() || esAdmin()));
     const alertaFecha = !fraccion && !validateStartDate(desde);
-    const jefe = (puedeAutorizar() && $('vacAutAhora').checked) ? ACCESO.usuario.nombre : '';
+    if(puedeAutorizar() && $('vacAutAhora').checked && !orgPuedeAutorizar(pid)){ alert(orgMotivoNoAutoriza(pid) + '\n\nLa solicitud se carga igual y queda pendiente de autorización.'); $('vacAutAhora').checked = false; }
+    const jefe = (puedeAutorizar() && $('vacAutAhora').checked && orgPuedeAutorizar(pid)) ? ACCESO.usuario.nombre : '';
     const al = alertasDe({pid, desde, hasta, dias, fraccion, ciclo: ($('vacCicloImp') && $('vacCicloImp').value) ? Number($('vacCicloImp').value) : undefined});
     if(al.length && jefe && !confirm(`Esta solicitud tiene observaciones:\n\n• ${al.join('\n• ')}\n\n¿La autorizás igual? Queda registrado a tu nombre con la observación.`)) return;
     const autorizo = jefe ? { nombre:jefe, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
@@ -5758,6 +6216,7 @@ const Vac = (function(){
   async function autorizar(id, silencioso){
     const s0 = solicitudes.find(s=>s.id===id); if(!s0 || !puedeAutorizar()) return false;
     const e0 = empById(s0.pid); if(!e0){ alert('Esa persona no está dentro de tu alcance.'); return false; }
+    if(!orgPuedeAutorizar(s0.pid)){ if(!silencioso) alert(orgMotivoNoAutoriza(s0.pid)); return false; }
     const al = alertasDe(s0);
     let obsJ = '';
     if(!silencioso){
@@ -5770,7 +6229,9 @@ const Vac = (function(){
     return ok;
   }
   async function quitarAutorizacion(id){
-    const s0 = solicitudes.find(s=>s.id===id); if(!s0 || !puedeAutorizar() || !confirm('¿Quitar la autorización de esta solicitud?')) return;
+    const s0 = solicitudes.find(s=>s.id===id); if(!s0 || !puedeAutorizar()) return;
+    if(!orgPuedeAutorizar(s0.pid)){ alert(orgMotivoNoAutoriza(s0.pid)); return; }
+    if(!confirm('¿Quitar la autorización de esta solicitud?')) return;
     const ok = await mutar(d=>{ const s = d.solicitudes.find(x=>x.id===id); if(s) s.autorizo = null; });
     if(ok){ registrarCambio('Vacaciones', 'Autorización quitada', `${(empById(s0.pid)||{}).nombre||s0.pid} · ${fmtDisplay(s0.desde)} a ${fmtDisplay(s0.hasta)}`); render(); }
   }
@@ -5809,6 +6270,7 @@ const Vac = (function(){
     if(f==='arrastre') return e.arrastre > 0;
     if(f==='arrastreLibre') return e.restAnterior > 0;
     if(f==='faltaAut') return ests.some(x=>x.k==='falta');
+    if(f==='mias') return orgEsSuJefe(e.id) && items.some(s=>!s.autorizo);
     if(f==='obs') return ests.some(x=>x.al.length);
     if(f==='excep') return ests.some(x=>x.k==='excep');
     if(f==='ok') return ests.some(x=>x.k==='ok');
@@ -5827,7 +6289,7 @@ const Vac = (function(){
     const selMode = esAdmin() || puedeAutorizar();
     const visiblesIds = new Set();
     if(!rows.length){ wrap.innerHTML = '<div class="empty">Sin resultados para esa búsqueda o filtro.</div>'; actualizarSel(visiblesIds); return; }
-    rows = ordenarFilas('vacSol', rows, { legajo:e=>Number(e.legajo), nombre:e=>e.nombre, modalidad:e=>e.modalidad, empresa:e=>e.empresa, sector:e=>e.sector,
+    rows = ordenarFilas('vacSol', rows, { legajo:e=>Number(e.legajo), nombre:e=>e.nombre, modalidad:e=>e.modalidad, empresa:e=>e.empresa, sector:e=>e.sector, autoriza:e=>orgAutoriza(e.id),
       arrastre:e=>e.arrastre, corr:e=>e.corrCiclo, pendientes:e=>e.disponible, asignado:e=>e.asignado, restante:e=>e.restante,
       fechas:e=>{ const d = solicitudes.filter(s=>s.pid===e.id && enCiclo(s)).map(s=>s.desde).sort(); return d[0]||null; } });
     const base = CICLO<=CICLO_BASE;
@@ -5840,7 +6302,7 @@ const Vac = (function(){
         const ft = items.length ? items.map(it=>{ if(!it.cancelada) visiblesIds.add(it.id);
             return `<div class="vac-sol-linea ${it.cancelada?'cancelada':''}">${selMode && !it.cancelada?`<input type="checkbox" data-vacsel="${it.id}" ${VAC_VIEW.sel.has(it.id)?'checked':''}>`:''}<span class="mono" title="${escHtml(it.cancelada?'':txtImput(it))}">${fmtDisplay(it.desde)}–${fmtDisplay(it.hasta)} (${it.dias}d)</span> ${it.cancelada?'<span class="vac-est sinreg">Cancelada</span>':chipEstado(it)} ${botonesSol(it)}</div>`; }).join('')
           : `<span class="tag">sin cargar</span>${canEdit()?` <button class="btn secondary small" data-vaccargar="${e.id}">Cargar</button>`:''}`;
-        return `<tr><td class="mono">${e.legajo}</td><td><span class="vac-nom-link" data-vaccargar="${e.id}" title="${canEdit()?'Abrir en Cargar solicitud':''}">${nombreConEstado(e)}</span></td><td>${chipModalidad(e.modalidad)}</td><td>${empresaChip(e.empresa)}</td><td>${escHtml(e.sector)}</td>
+        return `<tr><td class="mono">${e.legajo}</td><td><span class="vac-nom-link" data-vaccargar="${e.id}" title="${canEdit()?'Abrir en Cargar solicitud':''}">${nombreConEstado(e)}</span></td><td>${chipModalidad(e.modalidad)}</td><td>${empresaChip(e.empresa)}</td><td>${escHtml(e.sector)}${orgAutoriza(e.id)?`<div class="note" style="font-size:10.5px; white-space:nowrap" title="Jefe directo: autoriza sus vacaciones">autoriza ${escHtml(orgCorto(orgAutoriza(e.id)))}</div>`:''}</td>
           ${base ? `<td class="mono" title="${escHtml(e.sal.C[CICLO].pendMan?'Corregido a mano por un administrador':(e.p.vac?`Corresponden ${e.sal.C[CICLO].corr} − tomados ${e.sal.C[CICLO].previo} (Excel)`:'Sin Excel de pendientes: corresponde por antigüedad'))}">${e.corrCiclo}${e.sal.C[CICLO].pendMan?'*':''}${esAdmin()&&CICLO<cicloHoy()?` <span class="vac-sal"><span class="lnk" data-vacpend="${e.id}|${CICLO}">corregir</span></span>`:''}</td>`
             : `<td class="mono ${e.arrastre>0?'status-warn':''}" title="${escHtml(e.restAnterior>0?`Quedan ${e.restAnterior} días del pendiente anterior sin asignar`:'')}">${e.arrastre}${(e.sal.C[CICLO-1]||{}).pendMan?'*':''}${e.restAnterior>0&&e.restAnterior<e.arrastre?`<span class="note" style="display:block;font-size:10px;">libre ${e.restAnterior}</span>`:''}${esAdmin()?`<span class="vac-sal" style="display:block"><span class="lnk" data-vacpend="${e.id}|${CICLO-1}" title="Corregir los días pendientes del ciclo ${cicloLbl(CICLO-1)}">corregir</span></span>`:''}</td><td class="mono">${e.corrCiclo}</td><td class="mono"><b>${e.disponible}</b></td>`}<td class="mono">${asignado}</td><td class="mono ${sc}">${rest}</td><td style="font-size:12px; white-space:normal;">${ft}</td></tr>`;
       }).join('') + `</tbody></table>`;
@@ -5855,8 +6317,11 @@ const Vac = (function(){
     $('vacBtnCancSel').style.display = esAdmin() ? '' : 'none';
   }
   async function autorizarSeleccion(){
-    const ids = [...VAC_VIEW.sel].filter(id=>{ const s = solicitudes.find(x=>x.id===id); return s && !s.autorizo; });
-    if(!ids.length){ alert('Las seleccionadas ya están autorizadas.'); return; }
+    const pend = [...VAC_VIEW.sel].filter(id=>{ const s = solicitudes.find(x=>x.id===id); return s && !s.autorizo; });
+    if(!pend.length){ alert('Las seleccionadas ya están autorizadas.'); return; }
+    const ids = pend.filter(id=>orgPuedeAutorizar(solicitudes.find(x=>x.id===id).pid));
+    if(!ids.length){ alert('Ninguna de las seleccionadas es de gente a tu cargo según el organigrama.'); return; }
+    if(ids.length<pend.length && !confirm(`${pend.length-ids.length} de las seleccionadas no son de gente a tu cargo y se van a saltear. ¿Seguís con las otras ${ids.length}?`)) return;
     const conObs = ids.filter(id=>alertasDe(solicitudes.find(x=>x.id===id)).length).length;
     if(!confirm(`Autorizar ${ids.length} solicitud(es) a nombre de ${ACCESO.usuario.nombre}.${conObs?`\n${conObs} tienen observaciones: quedan como "autorizadas con observaciones".`:''}\n¿Confirmás?`)) return;
     for(const id of ids) await autorizar(id, true);
@@ -6247,7 +6712,7 @@ const Vac = (function(){
       .sort((a,b)=>b.desde.localeCompare(a.desde)).slice(0,24).map(s=>({
         desde:s.desde, hasta:s.hasta, dias:s.dias, ciclo:cicloLbl(cicloSol(s)),
         estado: s.cancelada ? 'cancelada' : (s.autorizo ? 'autorizada' : 'pendiente'),
-        autorizo: s.autorizo ? s.autorizo.nombre : '', descuenta:(sal.imput[s.id]||[]).map(([y,d])=>`${d} del ${cicloLbl(y)}`).join(' + '), portal: !!s.solRef }));
+        autorizo: s.autorizo ? s.autorizo.nombre : '', autoriza: (!s.autorizo && !s.cancelada) ? orgAutoriza(p.id) : '', descuenta:(sal.imput[s.id]||[]).map(([y,d])=>`${d} del ${cicloLbl(y)}`).join(' + '), portal: !!s.solRef }));
     return { ciclo:hoyC, lbl:cicloLbl(hoyC), periodo:`01/10/${hoyC} al 30/04/${hoyC+1}`, pendienteTotal:+tot.toFixed(1),
              actual:{ arrastre:act.arrastre, corresponde:act.corrCiclo, disponible:act.disponible, asignado:act.asignado, restante:act.restante }, ciclos, solicitudes:sols };
   }
@@ -6257,7 +6722,7 @@ const Vac = (function(){
     if(!(ACCESO.esAdmin || canEdit())){ alert('No tenés permiso para cargar vacaciones.'); return false; }
     const e = PERSONAL.find(x=>x.id===o.pid); if(!e){ alert('La persona no está en el listado.'); return false; }
     const al = alertasPara(o);
-    const autorizo = (o.autorizar && puedeAutorizar()) ? { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
+    const autorizo = (o.autorizar && puedeAutorizar() && orgPuedeAutorizar(o.pid)) ? { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
     let ya = false;
     const ok = await mutar(d=>{ if(d.solicitudes.some(s=>s.solRef===o.solRef && !s.cancelada)){ ya = true; return; }
       const nueva = { id:uid(), pid:o.pid, desde:o.desde, hasta:o.hasta, dias:o.dias, obs:o.obs||'', alertaFecha:!validateStartDate(o.desde), autorizo, solRef:o.solRef }; if(o.ciclo!=null && o.ciclo!=='') nueva.ciclo = Number(o.ciclo); d.solicitudes.push(nueva); });
@@ -8114,7 +8579,7 @@ const PortalRRHH = (function(){
       const prev = r.valor || {}, prevE = prev.empleados || {}, emps = {};
       PERSONAL.filter(p=>!p.baja && p.legajo!=null && String(p.legajo).trim()!=='').forEach(p=>{
         emps[p.id] = { legajo:p.legajo, nombre:p.nombre, empresa:p.empresa||'', sector:p.sector||'', gerencia:p.gerencia||'', categoria:p.categoria||'',
-          turno:p.turno||'', modalidad:p.modalidad||'', ingreso:p.ingreso||'', antig:p.antig==null?null:p.antig,
+          turno:p.turno||'', modalidad:p.modalidad||'', ingreso:p.ingreso||'', antig:p.antig==null?null:p.antig, jefe:orgAutoriza(p.id),
           vac: Vac.resumenPortal(p), prestamos: Prest.resumenPortal(p.id),
           datos: (verDatos && _datosCargados) ? datosPortal(p) : ((prevE[p.id] && prevE[p.id].datos) || {}) };
       });
@@ -8184,7 +8649,8 @@ const PortalRRHH = (function(){
         b.push(`<label class="chk">Imputar a <select data-pciclo="${p.id}" style="width:auto;padding:4px 6px">${Vac.htmlOpcionesCiclo(p.pid, (p.datos||{}).desde, '')}</select></label>`);
         b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar y pasar a Vacaciones</button>`);
       }
-      if(puede('vacAutorizar')) b.push(`<label class="chk"><input type="checkbox" data-paut="${p.id}" checked> autorizar también como jefe</label>`);
+      if(puede('vacAutorizar') && orgPuedeAutorizar(p.pid)) b.push(`<label class="chk"><input type="checkbox" data-paut="${p.id}" checked> autorizar también como jefe</label>`);
+      else if(orgAutoriza(p.pid)) b.push(`<span class="note">La autoriza ${escHtml(orgTit(orgAutoriza(p.pid)))}</span>`);
     } else if(p.tipo==='datos'){
       if(ACCESO.esAdmin || puede('datosEditar')) b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar y actualizar datos</button>`);
     } else if(puedePortal()) b.push(`<button class="btn small" data-presp="${p.id}">Responder y cerrar</button>`);
@@ -8241,7 +8707,7 @@ const PortalRRHH = (function(){
     const d = p.datos || {}, per = rhPersona(p.pid);
     if(!per){ alert('La persona ya no figura en el listado de personal.'); return; }
     if(p.tipo==='vacaciones'){
-      const chk = document.querySelector(`[data-paut="${CSS.escape(id)}"]`), aut = !!(chk && chk.checked && puede('vacAutorizar'));
+      const chk = document.querySelector(`[data-paut="${CSS.escape(id)}"]`), aut = !!(chk && chk.checked && puede('vacAutorizar') && orgPuedeAutorizar(p.pid));
       const selC = document.querySelector(`[data-pciclo="${CSS.escape(id)}"]`), ciclo = selC && selC.value ? Number(selC.value) : null;
       const al = Vac.alertasPara({ pid:p.pid, desde:d.desde, hasta:d.hasta, dias:Number(d.dias)||0, ciclo: ciclo==null ? undefined : ciclo });
       if(!confirm(`Pasar a Vacaciones el pedido de ${per.nombre}: ${rhFecha(d.desde)} al ${rhFecha(d.hasta)} (${d.dias} días)${ciclo!=null?`, imputadas al ciclo ${ciclo}/${String(ciclo+1).slice(2)}`:''}.${aut?`\nQueda AUTORIZADA a nombre de ${ACCESO.usuario.nombre}.`:'\nQueda pendiente de autorización del jefe en la pestaña Vacaciones.'}${al.length?`\n\nObservaciones:\n• ${al.join('\n• ')}`:''}`)) return;
@@ -9735,7 +10201,7 @@ async function initDocs(){
 let _ultimaAnotacion = 0;
 const _guardadosSinAnotar = [];
 const ETQ_FILAS = { dataset_v1:'Asistencia (Lenox / novedades)', personal_v1:'Personal', personal_datos_v1:'Datos personales', usuarios_v1:'Usuarios',
-  polivalencia_v1:'Polivalencia', pantalla_v1:'Pantalla', documentos_v1:'Documentación', mejoras_v1:'Pedidos de mejora', robot_status:'Robot Lenox' };
+  polivalencia_v1:'Polivalencia', pantalla_v1:'Pantalla', organigrama_v1:'Organigrama', documentos_v1:'Documentación', mejoras_v1:'Pedidos de mejora', robot_status:'Robot Lenox' };
 function etiquetaFila(id){
   if(ETQ_FILAS[id]) return ETQ_FILAS[id];
   if(/^premio_/.test(id)) return 'Premio cuatrimestral';
