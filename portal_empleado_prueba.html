@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Mi Spotsline — Portal del empleado</title>
+<meta name="theme-color" content="#111111">
+<style>
+  :root{
+    --bg:#0f0f0f; --panel:#1a1a1a; --panel-2:#232323; --line:#333; --text:#f0f0f0; --muted:#a3a3a3;
+    --yellow:#f5c400; --yellow-dim:rgba(245,196,0,.12); --good:#7fb069; --bad:#e5636f; --warn:#f0c27a;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;-webkit-text-size-adjust:100%}
+  body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+  .brand{font:600 11px var(--mono);letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+  h1{font-size:24px;margin:4px 0 6px;line-height:1.2} h2{font-size:19px;margin:0 0 12px} h3{font-size:15px;margin:18px 0 8px;color:var(--muted);font-weight:600}
+  p{line-height:1.5} .muted{color:var(--muted)} .small{font-size:13px} .mono{font-family:var(--mono)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+  .card.top{border-top:3px solid var(--yellow)}
+  label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 6px}
+  input,select,textarea{width:100%;font:inherit;font-size:17px;color:var(--text);background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:13px 12px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--yellow)}
+  textarea{min-height:90px;resize:vertical}
+  .btn{display:block;width:100%;text-align:center;font:inherit;font-weight:700;font-size:16px;border:none;border-radius:12px;padding:15px;cursor:pointer;background:var(--yellow);color:#111;text-decoration:none;margin-top:14px}
+  .btn.sec{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+  .btn.link{background:none;color:var(--yellow);padding:8px;margin-top:6px;font-weight:600}
+  .btn.danger{background:none;color:var(--bad);border:1px solid var(--bad)}
+  .btn:disabled{opacity:.55}
+  .err{color:var(--bad);font-size:14px;min-height:20px;margin-top:10px}
+  .ok{color:var(--good);font-size:14px}
+  .warn{background:rgba(240,194,122,.1);border:1px solid rgba(240,194,122,.4);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-top:10px}
+  .info{background:var(--panel-2);border-radius:10px;padding:10px 12px;font-size:14px;line-height:1.45;margin-top:10px;color:var(--muted)}
+  .head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+  .head .salir{background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 12px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:left;color:var(--text);font:inherit;cursor:pointer;min-height:104px;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
+  .tile:active{background:var(--panel-2)}
+  .tile .t{font-weight:700;font-size:15px} .tile .s{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.35}
+  .tile .n{font:700 26px var(--mono);color:var(--yellow)}
+  .tile.big{grid-column:span 2;border-top:3px solid var(--yellow)}
+  .ico{font-size:22px;line-height:1}
+  .aviso{background:var(--yellow-dim);border:1px solid rgba(245,196,0,.45);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:14.5px;line-height:1.45}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  .stat{background:var(--panel-2);border-radius:10px;padding:10px 8px;text-align:center}
+  .stat b{display:block;font:700 22px var(--mono)} .stat span{font-size:11.5px;color:var(--muted)}
+  .stat.hl b{color:var(--yellow)}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+  .row:last-child{border-bottom:none} .row .r{text-align:right}
+  .est{display:inline-block;font:700 11px var(--mono);padding:3px 8px;border-radius:10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .est.pendiente{color:var(--yellow);border-color:rgba(245,196,0,.5)} .est.aprobada,.est.resuelta,.est.autorizada{color:var(--good);border-color:var(--good)}
+  .est.rechazada{color:var(--bad);border-color:var(--bad)} .est.cancelada{opacity:.7}
+  .ped{border-bottom:1px solid var(--line);padding:12px 0} .ped:last-child{border-bottom:none}
+  .ped .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+  .resp{background:var(--panel-2);border-radius:10px;padding:9px 11px;margin-top:8px;font-size:14px;line-height:1.45}
+  .bar{height:8px;border-radius:5px;background:var(--panel-2);overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;background:var(--yellow)}
+  .back{background:none;border:none;color:var(--yellow);font:inherit;font-size:15px;padding:6px 0;margin-bottom:6px;cursor:pointer}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+  .seg button{flex:1;min-width:30%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px 8px;font:inherit;font-size:14px;cursor:pointer}
+  .seg button.on{border-color:var(--yellow);color:var(--yellow);background:var(--yellow-dim)}
+  .pie{margin-top:22px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5}
+  .sugcats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sugcat{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:left;color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+  .sugcat .ico{font-size:20px} .sugcat b{font-size:13.5px;line-height:1.25} .sugcat span:last-child{font-size:11.5px;color:var(--muted);line-height:1.3}
+  .sugcat.on{border-color:var(--yellow);background:var(--yellow-dim)} .sugcat.on b{color:var(--yellow)}
+  .tile.sug{grid-column:span 2;flex-direction:row;align-items:center;gap:12px;min-height:0;justify-content:flex-start}
+  .hide{display:none!important}
+  /* protección: sin selección de texto ni menú de mantener apretado, marca de agua y tapa al salir de la app */
+  body.seguro{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  body.seguro input, body.seguro textarea, body.seguro select{-webkit-user-select:text;user-select:text}
+  #marca{position:fixed;inset:0;pointer-events:none;z-index:50;background-repeat:repeat;opacity:.09;display:none}
+  body.seguro #marca{display:block}
+  #tapa{position:fixed;inset:0;z-index:100;background:#0f0f0f;display:none;align-items:center;justify-content:center;color:var(--muted);font-size:15px;text-align:center;padding:24px}
+  body.tapado #tapa{display:flex} body.tapado .wrap{filter:blur(18px)}
+  .loading{text-align:center;color:var(--muted);padding:40px 0}
+  table.c{width:100%;border-collapse:collapse;font-size:13.5px} table.c th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.c td{padding:7px 4px;border-bottom:1px solid var(--line)} table.c td.n,table.c th.n{text-align:right;font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="loading">Cargando…</div></div>
+<div id="marca"></div>
+<div id="tapa">🔒 Mi Spotsline<br>Tocá la pantalla para seguir</div>
+<script>
+'use strict';
+// Supabase del Panel de Paneles (clave pública). El portal solo puede llamar a las funciones rrhh_emp_*,
+// que devuelven los datos de la persona que entró (ver portal_empleado.sql).
+const SB_URL = 'https://fzylibnqqjznaddgpsjt.supabase.co';
+const SB_KEY = 'sb_publishable_zHONcBODl6nbPiLS3TSrZw_D8MVJqeE';
+const INACTIVIDAD_MIN = 10;
+const RECIBOS_URL_DEF = 'https://rh21.com.ar/sistema/sueldosxxi/index.php/sisweb/SPOTSLINE';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ss = { get(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }, del(k){ try{ sessionStorage.removeItem(k); }catch(e){} } };
+const fmtF = iso => { if(!iso) return ''; const [y,m,d] = String(iso).slice(0,10).split('-'); return `${d}/${m}/${y}`; };
+const fmtFC = iso => { if(!iso) return ''; const [y,m,d] = String(iso).slice(0,10).split('-'); return `${d}/${m}/${y.slice(2)}`; };
+const fmtFH = iso => { try{ const d = new Date(iso); return d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
+const money = n => '$ ' + (Number(n)||0).toLocaleString('es-AR',{minimumFractionDigits:2, maximumFractionDigits:2});
+const mesLbl = m => { if(!m) return ''; const [y,mm] = m.split('-'); return ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][Number(mm)-1] + ' ' + y; };
+const parseISO = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const isoDe = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const nomTitulo = s => String(s||'').toLowerCase().replace(/(^|\s)\S/g, c=>c.toUpperCase());
+
+const TIPOS = { vacaciones:'Vacaciones', datos:'Cambio de datos', constancia:'Constancia / certificado', ausencia:'Aviso de ausencia', consulta:'Consulta a RRHH' };
+const ESTADOS = { pendiente:'Pendiente', aprobada:'Aprobado', resuelta:'Respondido', rechazada:'Rechazado', cancelada:'Cancelado' };
+const CAMPOS = { domicilio:'Domicilio', localidad:'Localidad', cp:'Código postal', provincia:'Provincia', tel:'Teléfono / celular', mail:'Mail', hijos:'Hijos' };
+
+const S = { token: ss.get('rrhh_tok'), clave: null, data: null, vista: 'inicio', cfg: {} };
+const recibosUrl = () => S.cfg.recibosUrl || RECIBOS_URL_DEF;
+
+async function rpc(fn, args){
+  let res;
+  try{
+    res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, { method:'POST', headers:{ apikey:SB_KEY, 'Content-Type':'application/json' }, body: JSON.stringify(args||{}) });
+  }catch(e){ throw new Error('conexion'); }
+  let j = null; try{ j = await res.json(); }catch(e){}
+  if(!res.ok){
+    const m = (j && (j.message||j.hint)) || '';
+    if(/sesion_vencida/.test(m)){ salir(true); throw new Error('sesion'); }
+    if(res.status===404) throw new Error('sin_funciones');
+    throw new Error(m || 'error');
+  }
+  return j;
+}
+const msgError = e => ({ conexion:'No hay conexión. Revisá el wifi o los datos del celular y probá de nuevo.', sin_funciones:'El portal todavía no está habilitado. Avisale a RRHH.', sesion:'Tu sesión venció. Volvé a entrar.' }[e.message] || 'Algo salió mal. Probá de nuevo en un rato.');
+
+// ---- inactividad: se cierra solo (celulares compartidos) ----
+let _tInact = null;
+function tocarActividad(){ clearTimeout(_tInact); if(S.token) _tInact = setTimeout(()=>salir(true), INACTIVIDAD_MIN*60000); }
+['click','keydown','touchstart'].forEach(ev=>document.addEventListener(ev, tocarActividad, {passive:true}));
+
+async function salir(silencioso){
+  const t = S.token; S.token = null; S.data = null; S.clave = null; ss.del('rrhh_tok'); document.body.classList.remove('seguro','tapado');
+  if(t && !silencioso) rpc('rrhh_emp_salir', { p_token:t }).catch(()=>{});
+  pantallaLogin(silencioso ? 'Se cerró la sesión. Volvé a entrar.' : '');
+}
+
+// ================= LOGIN =================
+function pantallaLogin(aviso){
+  const leg = new URLSearchParams(location.search).get('leg') || '';
+  $('#app').innerHTML = `
+    <div style="padding-top:6vh">
+      <div class="brand">SPL / Spotsline</div>
+      <h1>Mi Spotsline</h1>
+      <div class="card top">
+        <label class="f" for="lLeg">Legajo</label>
+        <input id="lLeg" inputmode="numeric" autocomplete="username" value="${esc(leg)}" placeholder="Tu número de legajo">
+        <label class="f" for="lClave">Clave</label>
+        <input id="lClave" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Tu PIN (la primera vez, tu DNI)">
+        <button class="btn" id="lEntrar">Entrar</button>
+        <div class="err" id="lErr">${esc(aviso||'')}</div>
+        <div class="info">La primera vez entrás con tu <b>DNI</b> (solo números) y elegís un PIN propio. Si te olvidaste el PIN, pedile a RRHH que te blanquee la clave.</div>
+      </div>
+    </div>`;
+  const go = async ()=>{
+    const legajo = $('#lLeg').value.trim(), clave = $('#lClave').value.trim();
+    if(!legajo || !clave){ $('#lErr').textContent = 'Completá legajo y clave.'; return; }
+    $('#lEntrar').disabled = true; $('#lErr').textContent = '';
+    try{
+      const r = await rpc('rrhh_emp_login', { p_legajo:legajo, p_clave:clave });
+      if(!r || !r.ok){
+        $('#lErr').textContent = ({ clave:'Legajo o clave incorrectos.', bloqueado:'Demasiados intentos. Esperá 15 minutos y probá de nuevo, o pedile ayuda a RRHH.', sin_publicar:'El portal todavía no tiene datos cargados. Avisale a RRHH.', faltan_datos:'Completá legajo y clave.' })[r && r.error] || 'No se pudo entrar.';
+        return;
+      }
+      S.token = r.token; S.clave = clave; ss.set('rrhh_tok', r.token); tocarActividad();
+      if(r.debe_cambiar){ pantallaClave(true); return; }
+      await cargarYMostrar();
+    }catch(e){ $('#lErr').textContent = msgError(e); }
+    finally{ const b = $('#lEntrar'); if(b) b.disabled = false; }
+  };
+  $('#lEntrar').onclick = go;
+  $('#lClave').onkeydown = e=>{ if(e.key==='Enter') go(); };
+  $('#lLeg').onkeydown = e=>{ if(e.key==='Enter') $('#lClave').focus(); };
+  (leg ? $('#lClave') : $('#lLeg')).focus();
+}
+
+// ================= CAMBIO DE CLAVE =================
+function pantallaClave(obligatorio){
+  $('#app').innerHTML = `
+    ${obligatorio ? '' : '<button class="back" id="cVolver">‹ Volver</button>'}
+    <h2>${obligatorio ? 'Elegí tu PIN' : 'Cambiar mi clave'}</h2>
+    <div class="card top">
+      ${obligatorio ? '<p class="small muted" style="margin-top:0">Es tu primera vez (o te blanquearon la clave). Elegí un PIN de 4 a 8 números que solo sepas vos. No uses tu DNI ni tu legajo.</p>' :
+        '<label class="f" for="cAct">Clave actual</label><input id="cAct" type="password" inputmode="numeric" autocomplete="current-password">'}
+      <label class="f" for="cN1">PIN nuevo (4 a 8 números)</label><input id="cN1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">
+      <label class="f" for="cN2">Repetí el PIN</label><input id="cN2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8">
+      <button class="btn" id="cOk">Guardar PIN</button>
+      <div class="err" id="cErr"></div>
+    </div>`;
+  if(!obligatorio) $('#cVolver').onclick = ()=>mostrar('inicio');
+  $('#cOk').onclick = async ()=>{
+    const act = obligatorio ? S.clave : $('#cAct').value.trim(), n1 = $('#cN1').value.trim(), n2 = $('#cN2').value.trim();
+    if(!/^\d{4,8}$/.test(n1)){ $('#cErr').textContent = 'El PIN tiene que tener entre 4 y 8 números.'; return; }
+    if(n1!==n2){ $('#cErr').textContent = 'Los dos PIN no coinciden.'; return; }
+    if(/^(\d)\1+$/.test(n1) || '0123456789'.includes(n1) || '9876543210'.includes(n1)){ $('#cErr').textContent = 'Elegí un PIN menos fácil de adivinar (no 1111 ni 1234).'; return; }
+    $('#cOk').disabled = true;
+    try{
+      const r = await rpc('rrhh_emp_cambiar_clave', { p_token:S.token, p_actual:act||'', p_nueva:n1 });
+      if(!r.ok){ $('#cErr').textContent = ({ clave_actual:'La clave actual no es correcta.', formato:'El PIN tiene que tener entre 4 y 8 números.', igual_dni:'El PIN no puede ser tu DNI.' })[r.error] || 'No se pudo cambiar.'; return; }
+      S.clave = null;
+      await cargarYMostrar('PIN guardado. La próxima vez entrás con tu legajo y este PIN.');
+    }catch(e){ $('#cErr').textContent = msgError(e); }
+    finally{ const b = $('#cOk'); if(b) b.disabled = false; }
+  };
+  $('#cN1').focus();
+}
+
+// ================= DATOS =================
+async function cargarYMostrar(toast){
+  $('#app').innerHTML = '<div class="loading">Cargando tus datos…</div>';
+  try{
+    const r = await rpc('rrhh_emp_datos', { p_token:S.token });
+    S.data = r; S.cfg = r.config || {};
+    await cargarSugerencias();
+    if(r.debe_cambiar && S.clave){ pantallaClave(true); return; }
+    if(!r.empleado){ $('#app').innerHTML = `<div class="card top"><h2>Sin datos</h2><p class="muted">Todavía no hay información tuya publicada. Avisale a RRHH.</p><button class="btn sec" onclick="salir()">Salir</button></div>`; return; }
+    mostrar(S.vista || 'inicio', toast);
+  }catch(e){
+    if(e.message==='sesion') return;
+    $('#app').innerHTML = `<div class="card top"><p>${esc(msgError(e))}</p><button class="btn" id="rReint">Reintentar</button><button class="btn link" onclick="salir()">Salir</button></div>`;
+    $('#rReint').onclick = ()=>cargarYMostrar();
+  }
+}
+async function recargar(toast){ S.vista = S.vista || 'inicio'; await cargarYMostrar(toast); }
+
+const E = () => S.data.empleado;
+const pedidos = () => (S.data.pedidos||[]);
+function avisosVigentes(){ const hoy = isoDe(new Date()); return (S.cfg.avisos||[]).filter(a=>!a.hasta || a.hasta>=hoy); }
+
+function cabecera(){
+  const e = E();
+  return `<div class="head"><div><div class="brand">${esc(e.empresa||'Spotsline')}</div><h1 style="font-size:21px">${esc(nomTitulo(e.nombre))}</h1>
+    <div class="muted small">Legajo ${esc(e.legajo)}${e.sector?' · '+esc(nomTitulo(e.sector)):''}</div></div>
+    <button class="salir" onclick="salir()">Salir</button></div>`;
+}
+function pie(){
+  return `<div class="pie">${S.cfg.contacto ? esc(S.cfg.contacto)+'<br>' : ''}${S.data.actualizado ? 'Saldos y datos actualizados al '+esc(fmtFH(S.data.actualizado)) : ''}<br>
+    <button class="btn link" style="width:auto;display:inline" onclick="mostrar('clave')">Cambiar mi clave</button></div>`;
+}
+function mostrar(v, toast){
+  S.vista = v; window.scrollTo(0,0); marcaDeAgua();
+  const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, sugerencias:vSugerencias, sugerir:vSugerir, clave:()=>pantallaClave(false) };
+  (V[v] || vInicio)();
+  if(toast){ const t = document.createElement('div'); t.className = 'card'; t.style.cssText = 'border-color:var(--good);color:var(--good);font-size:14.5px'; t.textContent = toast;
+    const w = $('#app'); const h = w.querySelector('.head, .back'); if(h && h.nextSibling) w.insertBefore(t, h.nextSibling); else w.prepend(t); setTimeout(()=>t.remove(), 6000); }
+}
+const volver = (a='inicio', t='‹ Volver') => `<button class="back" onclick="mostrar('${a}')">${t}</button>`;
+
+// ---------- INICIO ----------
+function vInicio(){
+  const e = E(), v = e.vac || {}, pend = pedidos().filter(p=>p.estado==='pendiente').length;
+  const resp = pedidos().filter(p=>p.estado!=='pendiente' && p.resuelto && (Date.now()-Date.parse(p.resuelto.fecha)) < 7*864e5).length;
+  const pr = (e.prestamos||[]).filter(p=>p.estado==='vigente');
+  const act = v.actual || {};
+  $('#app').innerHTML = cabecera() +
+    (S.data.debe_cambiar ? `<div class="aviso">🔒 Todavía entrás con tu DNI. <button class="btn" style="margin-top:8px" onclick="mostrar('clave')">Elegir mi PIN</button></div>` : '') +
+    avisosVigentes().map(a=>`<div class="aviso">📢 ${esc(a.texto)}</div>`).join('') +
+    `<div class="grid">
+      <button class="tile big" onclick="mostrar('vacaciones')"><div><div class="t">🏖️ Mis vacaciones</div><div class="s">Ciclo ${esc(v.lbl||'')} · ${esc(v.periodo||'')}</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px"><div><div class="n">${act.restante!=null?esc(act.restante):'—'}</div><div class="s">días para pedir este ciclo</div></div>
+        <span class="btn" style="width:auto;margin:0;padding:10px 14px;font-size:14px" onclick="event.stopPropagation();mostrar('pedirVac')">Pedir</span></div></button>
+      ${recibosUrl() ? `<a class="tile" href="${esc(recibosUrl())}" target="_blank" rel="noopener"><div class="ico">🧾</div><div><div class="t">Recibos de sueldo</div><div class="s">Ir a la plataforma ↗</div></div></a>` : ''}
+      <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Mis pedidos</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
+      <button class="tile" onclick="mostrar('tramites')"><div class="ico">📝</div><div><div class="t">Trámites</div><div class="s">Constancias, avisar una ausencia, consultas</div></div></button>
+      <button class="tile" onclick="mostrar('datos')"><div class="ico">👤</div><div><div class="t">Mis datos</div><div class="s">Ver y pedir cambios</div></div></button>
+      ${S.sugOk!==false ? `<button class="tile sug" onclick="mostrar('sugerencias')"><div class="ico" style="font-size:28px">💡</div><div><div class="t">Buzón de sugerencias</div><div class="s">${sugNuevas()?`<b style="color:var(--yellow)">${sugNuevas()} respuesta(s) nueva(s)</b>`:'Ideas para trabajar mejor, más rápido y con menos desperdicio'}</div></div></button>` : ''}
+      ${(e.prestamos||[]).length ? `<button class="tile" onclick="mostrar('prestamos')"><div class="ico">💵</div><div><div class="t">Préstamos</div><div class="s">${pr.length?`Saldo ${money(pr.reduce((t,p)=>t+p.saldo,0))}`:'Sin saldo pendiente'}</div></div></button>` : ''}
+    </div>` + (recibosUrl() && S.cfg.recibosTexto ? `<div class="info">🧾 ${esc(S.cfg.recibosTexto)}</div>` : '') + pie();
+}
+
+// ---------- VACACIONES ----------
+function vVacaciones(){
+  const v = E().vac || {}, a = v.actual || {};
+  const sols = v.solicitudes || [];
+  const pedVac = pedidos().filter(p=>p.tipo==='vacaciones' && p.estado==='pendiente');
+  $('#app').innerHTML = volver() + `<h2>Mis vacaciones</h2>
+    <div class="card top"><div class="muted small">Ciclo ${esc(v.lbl||'')} · ${esc(v.periodo||'')}</div>
+      <div class="stats"><div class="stat"><b>${esc(a.disponible??'—')}</b><span>disponibles</span></div><div class="stat"><b>${esc(a.asignado??'—')}</b><span>ya asignados</span></div><div class="stat hl"><b>${esc(a.restante??'—')}</b><span>te quedan</span></div></div>
+      <div class="info">Disponibles = ${esc(a.corresponde??0)} días que te corresponden este ciclo${a.arrastre?` + ${esc(a.arrastre)} pendientes de ciclos anteriores`:''}. Se usan primero los días más viejos.</div>
+      <button class="btn" onclick="mostrar('pedirVac')">Pedir vacaciones</button></div>
+    ${pedVac.length ? `<h3>Pedidos esperando respuesta de RRHH</h3><div class="card">${pedVac.map(p=>`<div class="row"><span>${fmtFC(p.datos.desde)} al ${fmtFC(p.datos.hasta)} · ${esc(p.datos.dias)} días</span><span class="est pendiente">Pendiente</span></div>`).join('')}</div>` : ''}
+    <h3>Vacaciones cargadas</h3><div class="card">${sols.length ? sols.map(s=>`<div class="row"><span>${fmtFC(s.desde)} al ${fmtFC(s.hasta)}<br><span class="muted small">${esc(s.dias)} días · ciclo ${esc(s.ciclo)}${s.descuenta?` · usa ${esc(s.descuenta)}`:''}</span></span>
+      <span class="r"><span class="est ${s.estado}">${s.estado==='autorizada'?'Autorizada':s.estado==='cancelada'?'Cancelada':'Falta autorizar'}</span>${s.autorizo?`<br><span class="muted small">${esc(nomTitulo(s.autorizo))}</span>`:(s.autoriza?`<br><span class="muted small">la autoriza ${esc(nomTitulo(s.autoriza))}</span>`:'')}</span></div>`).join('') : '<p class="muted small" style="margin:0">Todavía no tenés vacaciones cargadas en este ciclo.</p>'}</div>
+    <h3>Saldo por ciclo</h3><div class="card"><table class="c"><tr><th>Ciclo</th><th class="n">Corresp.</th><th class="n">Tomado</th><th class="n">Pendiente</th></tr>
+      ${(v.ciclos||[]).map(c=>`<tr><td>${esc(c.lbl)}</td><td class="n">${esc(c.corr)}</td><td class="n">${esc(c.tomado)}</td><td class="n"><b>${esc(c.pend)}</b></td></tr>`).join('')}
+      <tr><td><b>Total pendiente</b></td><td></td><td></td><td class="n"><b>${esc(v.pendienteTotal??0)}</b></td></tr></table></div>` + pie();
+}
+function esHabil(d, fer){ const w = d.getDay(); return w>=1 && w<=5 && !fer.includes(isoDe(d)); }
+function inicioCorrecto(iso, fer){ const d = parseISO(iso), back = d.getDay()===0 ? 6 : d.getDay()-1; const m = new Date(d); m.setDate(d.getDate()-back); let g = 0; while(!esHabil(m, fer) && g<10){ m.setDate(m.getDate()+1); g++; } return isoDe(m); }
+function vPedirVac(){
+  const v = E().vac || {}, a = v.actual || {};
+  const man = new Date(); man.setDate(man.getDate()+1);
+  $('#app').innerHTML = volver('vacaciones') + `<h2>Pedir vacaciones</h2>
+    <div class="card top">
+      <div class="muted small">Te quedan <b style="color:var(--yellow)">${esc(a.restante??'—')}</b> días en el ciclo ${esc(v.lbl||'')} (${esc(v.periodo||'')}).</div>
+      <label class="f" for="vDesde">Desde (primer día de vacaciones)</label><input type="date" id="vDesde" min="${isoDe(man)}">
+      <label class="f" for="vHasta">Hasta (último día de vacaciones)</label><input type="date" id="vHasta" min="${isoDe(man)}">
+      <div class="info" id="vDias">Elegí las fechas: los días se cuentan corridos, incluyendo sábados, domingos y feriados. Mínimo 7 días.</div>
+      <div id="vAlertas"></div>
+      <label class="f" for="vObs">Comentario para RRHH (opcional)</label><textarea id="vObs" maxlength="300" placeholder="Ej.: si no se puede esa semana, me sirve la siguiente"></textarea>
+      <button class="btn" id="vEnviar">Enviar pedido</button>
+      <div class="err" id="vErr"></div>
+      <div class="info">Lo revisa RRHH y lo autoriza tu jefe. Vas a ver la respuesta en <b>Mis pedidos</b>. Por ley, las vacaciones se notifican con 45 días de anticipación: pedilas con tiempo.</div>
+    </div>`;
+  const calc = ()=>{
+    const d1 = $('#vDesde').value, d2 = $('#vHasta').value, al = [], fer = S.cfg.feriados || [];
+    if(d1) $('#vHasta').min = d1;
+    if(!d1 || !d2){ $('#vAlertas').innerHTML = ''; return null; }
+    if(d2 < d1){ $('#vDias').textContent = 'La fecha "hasta" no puede ser anterior a "desde".'; $('#vAlertas').innerHTML=''; return null; }
+    const dias = Math.round((parseISO(d2)-parseISO(d1))/864e5)+1;
+    $('#vDias').innerHTML = `Son <b style="color:var(--text)">${dias}</b> días corridos.`;
+    const ok = inicioCorrecto(d1, fer);
+    if(ok!==d1) al.push(`Las vacaciones empiezan un lunes hábil. Esa semana el inicio sería el <b>${fmtF(ok)}</b>.`);
+    if(a.restante!=null && dias > a.restante) al.push(`Pedís ${dias} días y te quedan ${a.restante} en el ciclo.`);
+    const cy = v.ciclo; if(cy && (d1 < `${cy}-10-01` || d2 > `${cy+1}-04-30`)) al.push(`Queda fuera del período del ciclo (${esc(v.periodo)}). RRHH lo va a revisar.`);
+    if(dias < 7) al.push('Desde el portal se piden <b>7 días o más</b>. Si necesitás menos días, pedíselo a tu jefe.');
+    if(dias > 45) al.push('Es un período muy largo: revisá las fechas.');
+    $('#vAlertas').innerHTML = al.map(x=>`<div class="warn">⚠ ${x}</div>`).join('');
+    return { desde:d1, hasta:d2, dias };
+  };
+  $('#vDesde').onchange = calc; $('#vHasta').onchange = calc;
+  $('#vEnviar').onclick = async ()=>{
+    const x = calc(); if(!x){ $('#vErr').textContent = 'Elegí las fechas desde y hasta.'; return; }
+    if(x.dias < 7){ $('#vErr').textContent = 'Desde el portal se piden 7 días o más. Para menos días hablá con tu jefe.'; return; }
+    if(x.dias > 60){ $('#vErr').textContent = 'Revisá las fechas: no se pueden pedir más de 60 días juntos.'; return; }
+    $('#vEnviar').disabled = true; $('#vErr').textContent = '';
+    try{
+      const r = await rpc('rrhh_emp_pedir', { p_token:S.token, p_tipo:'vacaciones', p_datos:{ ...x, obs:$('#vObs').value.trim() } });
+      if(!r.ok){ $('#vErr').textContent = ({ pasado:'La fecha de inicio ya pasó.', minimo:'Desde el portal se piden 7 días o más.', fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
+      S.vista = 'pedidos'; await recargar('Pedido enviado. RRHH te va a responder acá.');
+    }catch(e){ $('#vErr').textContent = msgError(e); }
+    finally{ const b = $('#vEnviar'); if(b) b.disabled = false; }
+  };
+}
+
+// ---------- PEDIDOS ----------
+function detallePedido(p){
+  const d = p.datos || {};
+  if(p.tipo==='vacaciones') return `${fmtFC(d.desde)} al ${fmtFC(d.hasta)} · ${esc(d.dias)} días`;
+  if(p.tipo==='ausencia') return `${fmtFC(d.desde)} al ${fmtFC(d.hasta)} · ${esc(d.motivo||'')}`;
+  if(p.tipo==='datos') return Object.entries(d.campos||{}).map(([k,v])=>`${esc(CAMPOS[k]||k)}: ${esc(v)}`).join(' · ');
+  if(p.tipo==='constancia') return `${esc(d.que||'')}${d.para?' · para '+esc(d.para):''}`;
+  return esc(d.texto||'');
+}
+function vPedidos(){
+  const L = pedidos();
+  $('#app').innerHTML = volver() + `<h2>Mis pedidos</h2><div class="card">${L.length ? L.map(p=>`
+    <div class="ped"><div class="top"><b>${esc(TIPOS[p.tipo]||p.tipo)}</b><span class="est ${p.estado}">${esc(ESTADOS[p.estado]||p.estado)}</span></div>
+      <div class="small" style="margin-top:4px">${detallePedido(p)}</div>
+      <div class="muted small" style="margin-top:2px">Enviado el ${esc(fmtFH(p.creado))}</div>
+      ${p.resuelto && (p.resuelto.nota || p.estado!=='pendiente') ? `<div class="resp"><b>RRHH${p.resuelto.por?' ('+esc(nomTitulo(p.resuelto.por))+')':''}:</b> ${esc(p.resuelto.nota || ESTADOS[p.estado])}<div class="muted small">${esc(fmtFH(p.resuelto.fecha))}</div></div>` : ''}
+      ${p.estado==='pendiente' ? `<button class="btn link" style="width:auto;padding-left:0" data-cancel="${esc(p.id)}">Cancelar este pedido</button>` : ''}
+    </div>`).join('') : '<p class="muted" style="margin:0">Todavía no hiciste ningún pedido.</p>'}</div>
+    <button class="btn sec" onclick="mostrar('tramites')">Hacer un pedido nuevo</button>` + pie();
+  document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick = async ()=>{
+    if(!confirm('¿Cancelar este pedido?')) return;
+    try{ const r = await rpc('rrhh_emp_cancelar', { p_token:S.token, p_id:b.dataset.cancel }); await recargar(r.ok ? 'Pedido cancelado.' : 'Ese pedido ya no se puede cancelar (RRHH ya lo resolvió).'); }catch(e){ alert(msgError(e)); }
+  });
+}
+
+// ---------- DATOS ----------
+function vDatos(){
+  const e = E(), d = e.datos || {};
+  const fila = (t,v) => `<div class="row"><span class="muted">${t}</span><span class="r">${v ? esc(v) : '<span class="muted">—</span>'}</span></div>`;
+  $('#app').innerHTML = volver() + `<h2>Mis datos</h2>
+    <h3>Laborales</h3><div class="card">${fila('Nombre', nomTitulo(e.nombre))}${fila('Legajo', e.legajo)}${fila('Empresa', e.empresa)}${fila('Sector', nomTitulo(e.sector))}${fila('Categoría', e.categoria)}${e.jefe?fila('Jefe directo', nomTitulo(e.jefe)):''}${fila('Turno', e.turno)}${fila('Fecha de ingreso', fmtF(e.ingreso))}${e.antig!=null?fila('Antigüedad', e.antig+' año'+(e.antig===1?'':'s')):''}</div>
+    <h3>Personales</h3><div class="card">${fila('DNI', d.dni)}${fila('CUIL', d.cuil)}${fila('Fecha de nacimiento', fmtF(d.nac))}${Object.entries(CAMPOS).map(([k,t])=>fila(t, d[k])).join('')}</div>
+    <button class="btn" onclick="mostrar('pedirDatos')">Pedir un cambio de datos</button>
+    <div class="info">Si cambiaste de domicilio, teléfono o tuviste un hijo, avisá acá. RRHH lo revisa y lo actualiza. Para corregir DNI, CUIL o fecha de nacimiento acercate a RRHH con el documento.</div>` + pie();
+}
+function vPedirDatos(){
+  const d = E().datos || {};
+  $('#app').innerHTML = volver('datos') + `<h2>Pedir un cambio de datos</h2><div class="card top">
+    <p class="small muted" style="margin-top:0">Cambiá solo lo que haya que corregir.</p>
+    ${Object.entries(CAMPOS).map(([k,t])=>`<label class="f" for="d_${k}">${t}</label><input id="d_${k}" data-campo="${k}" value="${esc(d[k]||'')}" ${k==='tel'||k==='cp'||k==='hijos'?'inputmode="numeric"':''}${k==='mail'?' type="email"':''} maxlength="150">`).join('')}
+    <label class="f" for="dObs">Comentario (opcional)</label><textarea id="dObs" maxlength="300"></textarea>
+    <button class="btn" id="dEnviar">Enviar a RRHH</button><div class="err" id="dErr"></div></div>`;
+  $('#dEnviar').onclick = async ()=>{
+    const campos = {}; document.querySelectorAll('[data-campo]').forEach(i=>{ const v = i.value.trim(); if(v !== String(d[i.dataset.campo]||'').trim()) campos[i.dataset.campo] = v; });
+    if(!Object.keys(campos).length){ $('#dErr').textContent = 'No cambiaste ningún dato.'; return; }
+    if(campos.mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(campos.mail)){ $('#dErr').textContent = 'Revisá el mail.'; return; }
+    $('#dEnviar').disabled = true;
+    try{ const r = await rpc('rrhh_emp_pedir', { p_token:S.token, p_tipo:'datos', p_datos:{ campos, obs:$('#dObs').value.trim() } });
+      if(!r.ok){ $('#dErr').textContent = r.error==='demasiados' ? 'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' : 'No se pudo enviar.'; return; }
+      S.vista = 'pedidos'; await recargar('Pedido enviado. Cuando RRHH lo apruebe, tus datos se actualizan.');
+    }catch(e){ $('#dErr').textContent = msgError(e); } finally{ const b = $('#dEnviar'); if(b) b.disabled = false; }
+  };
+}
+
+// ---------- PRÉSTAMOS ----------
+function vPrestamos(){
+  const L = E().prestamos || [];
+  $('#app').innerHTML = volver() + `<h2>Mis préstamos</h2>` + (L.length ? L.map(p=>{ const pct = p.monto>0 ? Math.min(100, Math.round(p.pagado/p.monto*100)) : 0;
+    return `<div class="card ${p.estado==='vigente'?'top':''}"><div class="row" style="padding-top:0"><span><b>${money(p.monto)}</b><br><span class="muted small">otorgado el ${fmtF(p.fecha)}${p.obs?' · '+esc(p.obs):''}</span></span><span class="est ${p.estado==='vigente'?'pendiente':'aprobada'}">${p.estado==='vigente'?'Vigente':'Pagado'}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="stats"><div class="stat"><b>${esc(p.cuotasPagas)}/${esc(p.cuotas)}</b><span>cuotas</span></div><div class="stat"><b style="font-size:15px">${money(p.cuota)}</b><span>por cuota</span></div><div class="stat hl"><b style="font-size:15px">${money(p.saldo)}</b><span>saldo</span></div></div>
+      <div class="info">Se descuenta en el recibo desde ${esc(mesLbl(p.inicio))}.</div>
+      ${(p.pagos||[]).length ? `<table class="c" style="margin-top:8px"><tr><th>Mes</th><th>Forma</th><th class="n">Monto</th></tr>${p.pagos.slice().reverse().map(x=>`<tr><td>${esc(mesLbl(x.periodo))}</td><td>${x.tipo==='liquidacion'?'Recibo':'Pago'}</td><td class="n">${money(x.monto)}</td></tr>`).join('')}</table>` : ''}</div>`; }).join('')
+    : '<div class="card"><p class="muted" style="margin:0">No tenés préstamos.</p></div>') + pie();
+}
+
+// ---------- TRÁMITES ----------
+function vTramites(){
+  $('#app').innerHTML = volver() + `<h2>Trámites</h2>
+    <div class="seg" id="tSeg"><button data-t="constancia" class="on">Constancia</button><button data-t="ausencia">Avisar ausencia</button><button data-t="consulta">Consulta</button></div>
+    <div class="card top" id="tForm"></div>` + pie();
+  const forms = {
+    constancia: `<label class="f" for="tQue">¿Qué necesitás?</label><select id="tQue"><option>Certificado de trabajo y servicios</option><option>Certificado de vacaciones</option></select>
+      <label class="f" for="tPara">¿Para presentar dónde? (opcional)</label><input id="tPara" maxlength="120" placeholder="Ej.: banco, escuela, ANSES, alquiler">
+      <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
+    ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Esto <b>no reemplaza el certificado</b>: entregalo en RRHH.</p>
+      <label class="f" for="tDesde">Desde</label><input type="date" id="tDesde" value="${isoDe(new Date())}"><label class="f" for="tHasta">Hasta</label><input type="date" id="tHasta" value="${isoDe(new Date())}">
+      <label class="f" for="tMot">Motivo</label><select id="tMot"><option>Enfermedad</option><option>Familiar enfermo</option><option>Turno médico</option><option>Examen / estudio</option><option>Trámite personal</option><option>Fallecimiento de familiar</option><option>Nacimiento</option><option>Otro</option></select>
+      <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
+    consulta: `<label class="f" for="tTexto">Tu consulta para RRHH</label><textarea id="tTexto" maxlength="800" placeholder="Escribí tu consulta (sueldo, horas, licencias, ropa de trabajo, etc.)"></textarea>`
+  };
+  let tipo = 'constancia';
+  const pint = ()=>{ $('#tForm').innerHTML = forms[tipo] + `<button class="btn" id="tEnviar">Enviar a RRHH</button><div class="err" id="tErr"></div>`; $('#tEnviar').onclick = enviar; };
+  document.querySelectorAll('#tSeg button').forEach(b=>b.onclick = ()=>{ tipo = b.dataset.t; document.querySelectorAll('#tSeg button').forEach(x=>x.classList.toggle('on', x===b)); pint(); });
+  async function enviar(){
+    let datos;
+    if(tipo==='constancia') datos = { que:$('#tQue').value, para:$('#tPara').value.trim(), obs:$('#tObs').value.trim() };
+    else if(tipo==='ausencia'){ const d1 = $('#tDesde').value, d2 = $('#tHasta').value; if(!d1 || !d2 || d2<d1){ $('#tErr').textContent = 'Revisá las fechas.'; return; } datos = { desde:d1, hasta:d2, motivo:$('#tMot').value, obs:$('#tObs').value.trim() }; }
+    else { const t = $('#tTexto').value.trim(); if(t.length<5){ $('#tErr').textContent = 'Escribí tu consulta.'; return; } datos = { texto:t }; }
+    $('#tEnviar').disabled = true;
+    try{ const r = await rpc('rrhh_emp_pedir', { p_token:S.token, p_tipo:tipo, p_datos:datos });
+      if(!r.ok){ $('#tErr').textContent = ({ fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
+      S.vista = 'pedidos'; await recargar('Enviado. La respuesta de RRHH aparece en Mis pedidos.');
+    }catch(e){ $('#tErr').textContent = msgError(e); } finally{ const b = $('#tEnviar'); if(b) b.disabled = false; }
+  }
+  pint();
+}
+
+// ---------- BUZÓN DE SUGERENCIAS (las gestiona el jefe de producción) ----------
+const SUG_CATS = {
+  tiempos:     { ico:'⏱️', t:'Tiempos y productividad', s:'Esperas, pasos de más, cuellos de botella, reprocesos' },
+  calidad:     { ico:'✅', t:'Calidad', s:'Fallas que se repiten, piezas que vuelven, controles' },
+  ahorro:      { ico:'♻️', t:'Ahorro de materiales', s:'Scrap, pintura, insumos, energía' },
+  maquinas:    { ico:'🔧', t:'Máquinas y herramientas', s:'Mantenimiento, ajustes, matrices, herramental que falta' },
+  orden:       { ico:'🗂️', t:'Orden y puesto de trabajo', s:'Dónde están las cosas, layout, limpieza' },
+  logistica:   { ico:'🚚', t:'Logística interna y expedición', s:'Abastecer la línea, movimientos, stock, despacho' },
+  seguridad:   { ico:'🦺', t:'Seguridad que frena el trabajo', s:'Riesgos o condiciones que paran o enlentecen' },
+  coordinacion:{ ico:'🔄', t:'Coordinación y planificación', s:'Info que llega tarde, cambios de orden, entre sectores' },
+};
+const SUG_GANA = { tiempo:'⏱ Ahorra tiempo', costo:'💲 Ahorra material o plata', calidad:'✅ Mejora la calidad', seguridad:'🦺 Más seguro', orden:'🙌 Más cómodo u ordenado' };
+const SUG_AREAS = ['Armado','Fabricación','Pintura','Expedición','Depósito','Mantenimiento','Matricería','Chofer / reparto','Oficina','Toda la planta'];
+const SUG_EST = { recibida:['Recibida','pendiente'], analisis:['En análisis','pendiente'], aprobada:['Aprobada: se va a hacer','aprobada'], implementada:['Implementada','aprobada'], descartada:['No se hace por ahora','rechazada'] };
+const sugs = () => (S.sug || []);
+const sugNuevas = () => sugs().filter(x=>x.respuesta && x.respuesta.fecha && (Date.now()-Date.parse(x.respuesta.fecha)) < 7*864e5).length;
+async function cargarSugerencias(){
+  try{ const r = await rpc('rrhh_emp_mis_sugerencias', { p_token:S.token }); S.sug = (r && r.sugerencias) || []; S.sugOk = true; }
+  catch(e){ if(e.message==='sin_funciones') S.sugOk = false; }
+}
+function vSugerencias(){
+  const L = sugs();
+  const fila = x => { const c = SUG_CATS[x.datos && x.datos.cat] || {}, e = SUG_EST[x.estado] || [x.estado,''];
+    return `<div class="ped"><div class="top"><b>${c.ico||'💡'} ${esc(c.t||'Sugerencia')}${x.num?` <span class="muted small mono">#${esc(x.num)}</span>`:''}</b><span class="est ${e[1]}">${esc(e[0])}</span></div>
+      <div class="small" style="margin-top:6px"><span class="muted">Hoy:</span> ${esc(x.datos.hoy)}</div>
+      <div class="small" style="margin-top:4px"><span class="muted">Propuse:</span> ${esc(x.datos.propuesta)}</div>
+      <div class="muted small" style="margin-top:4px">${esc(x.datos.area||'')} · enviada el ${esc(fmtFH(x.creado))}${x.foto?' · 📷 con foto':''}</div>
+      ${x.respuesta ? `<div class="resp"><b>Jefe de producción${x.respuesta.por?' ('+esc(nomTitulo(x.respuesta.por))+')':''}:</b> ${esc(x.respuesta.texto)}<div class="muted small">${esc(fmtFH(x.respuesta.fecha))}</div></div>` : ''}
+    </div>`; };
+  const impl = L.filter(x=>x.estado==='implementada').length;
+  $('#app').innerHTML = volver() + `<h2>Buzón de sugerencias</h2>
+    <div class="card top"><p class="small" style="margin-top:0;line-height:1.5">¿Ves algo que se podría hacer mejor, más rápido o con menos desperdicio? Contalo acá. Lo recibe el <b>jefe de producción</b>, que la analiza y te responde por este mismo lugar.</p>
+      <button class="btn" onclick="mostrar('sugerir')">💡 Hacer una sugerencia</button>
+      ${S.sugOk===false ? '<div class="warn">El buzón todavía no está habilitado. Avisale a RRHH.</div>' : ''}</div>
+    ${L.length ? `<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${L.length}</b><span>enviadas</span></div><div class="stat"><b>${L.filter(x=>x.estado==='aprobada'||x.estado==='analisis').length}</b><span>en curso</span></div><div class="stat hl"><b>${impl}</b><span>implementadas</span></div></div>` : ''}
+    <h3>Mis sugerencias</h3><div class="card">${L.length ? L.map(fila).join('') : '<p class="muted small" style="margin:0">Todavía no mandaste ninguna.</p>'}</div>` + pie();
+}
+function achicarFoto(file){
+  return new Promise((ok, mal)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=>mal(new Error('foto'));
+    fr.onload = ()=>{ const im = new Image(); im.onerror = ()=>mal(new Error('foto'));
+      im.onload = ()=>{ const M = 1280, k = Math.min(1, M/Math.max(im.width, im.height)); const c = document.createElement('canvas');
+        c.width = Math.round(im.width*k); c.height = Math.round(im.height*k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        let q = .72, url = c.toDataURL('image/jpeg', q); while(url.length > 850000 && q > .3){ q -= .12; url = c.toDataURL('image/jpeg', q); } ok(url); };
+      im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+function vSugerir(){
+  const e = E(), sec = String(e.sector||'').toUpperCase();
+  const def = SUG_AREAS.find(a=>a.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').startsWith(sec.normalize('NFD').replace(/[̀-ͯ]/g,'').slice(0,5))) || '';
+  let cat = '', foto = null; const gana = new Set();
+  $('#app').innerHTML = volver('sugerencias') + `<h2>Hacer una sugerencia</h2>
+    <div class="card top">
+      <label class="f">1. ¿De qué se trata?</label>
+      <div class="sugcats">${Object.entries(SUG_CATS).map(([k,c])=>`<button type="button" class="sugcat" data-cat="${k}"><span class="ico">${c.ico}</span><b>${esc(c.t)}</b><span>${esc(c.s)}</span></button>`).join('')}</div>
+      <label class="f" for="sArea">2. ¿Dónde?</label>
+      <select id="sArea"><option value="">Elegí el sector</option>${SUG_AREAS.map(a=>`<option ${a===def?'selected':''}>${esc(a)}</option>`).join('')}</select>
+      <label class="f" for="sHoy">3. ¿Qué pasa hoy?</label>
+      <textarea id="sHoy" maxlength="1200" placeholder="Ej.: para pintar la pieza X la tenemos que dar vuelta dos veces y se pierden 10 minutos por tanda"></textarea>
+      <label class="f" for="sProp">4. ¿Qué proponés?</label>
+      <textarea id="sProp" maxlength="1200" placeholder="Ej.: un soporte giratorio en la cabina 2"></textarea>
+      <label class="f">5. ¿Qué se gana? (podés marcar varias)</label>
+      <div class="seg" id="sGana">${Object.entries(SUG_GANA).map(([k,t])=>`<button type="button" data-g="${k}">${esc(t)}</button>`).join('')}</div>
+      <label class="f">6. Foto (opcional)</label>
+      <label class="btn sec" style="margin-top:0;cursor:pointer" for="sFoto">📷 Sacar o elegir una foto</label>
+      <input type="file" id="sFoto" accept="image/*" capture="environment" class="hide">
+      <div id="sFotoPrev"></div>
+      <button class="btn" id="sEnviar">Enviar sugerencia</button>
+      <div class="err" id="sErr"></div>
+      <div class="info">Va con tu nombre (${esc(nomTitulo(e.nombre))}, legajo ${esc(e.legajo)}) al jefe de producción. La respuesta la ves en <b>Buzón de sugerencias</b>.</div>
+    </div>`;
+  $('#app').addEventListener('input', ()=>{ const x = $('#sErr'); if(x) x.textContent = ''; });
+  document.querySelectorAll('.sugcat').forEach(b=>b.onclick = ()=>{ cat = b.dataset.cat; $('#sErr').textContent = ''; document.querySelectorAll('.sugcat').forEach(x=>x.classList.toggle('on', x===b)); });
+  document.querySelectorAll('#sGana button').forEach(b=>b.onclick = ()=>{ const k = b.dataset.g; gana.has(k) ? gana.delete(k) : gana.add(k); b.classList.toggle('on', gana.has(k)); });
+  $('#sFoto').onchange = async ev=>{ const f = ev.target.files && ev.target.files[0]; if(!f) return;
+    $('#sFotoPrev').innerHTML = '<div class="info">Preparando la foto…</div>';
+    try{ foto = await achicarFoto(f); $('#sFotoPrev').innerHTML = `<div style="position:relative;margin-top:10px"><img src="${foto}" alt="Foto adjunta" style="width:100%;border-radius:10px;display:block"><button type="button" class="btn danger" id="sFotoX" style="margin-top:6px">Quitar la foto</button></div>`;
+      $('#sFotoX').onclick = ()=>{ foto = null; $('#sFoto').value = ''; $('#sFotoPrev').innerHTML = ''; }; }
+    catch(e){ foto = null; $('#sFotoPrev').innerHTML = '<div class="warn">No se pudo leer la foto. Probá con otra.</div>'; } };
+  $('#sEnviar').onclick = async ()=>{
+    const area = $('#sArea').value, hoy = $('#sHoy').value.trim(), prop = $('#sProp').value.trim();
+    const err = !cat ? 'Elegí de qué se trata (punto 1).' : !area ? 'Elegí el sector (punto 2).' : hoy.length < 10 ? 'Contá un poco más qué pasa hoy (punto 3).' : prop.length < 10 ? 'Contá un poco más qué proponés (punto 4).' : '';
+    if(err){ $('#sErr').textContent = err; return; }
+    $('#sEnviar').disabled = true; $('#sErr').textContent = '';
+    try{
+      const r = await rpc('rrhh_emp_sugerir', { p_token:S.token, p_datos:{ cat, area, hoy, propuesta:prop, gana:[...gana] }, p_foto:foto });
+      if(!r.ok){ $('#sErr').textContent = ({ demasiadas:'Ya mandaste 5 sugerencias hoy. Mandá la próxima mañana.', corta:'Contá un poco más qué pasa y qué proponés.', foto:'La foto es muy pesada. Probá con otra.', sin_publicar:'Todavía no hay datos tuyos publicados. Avisale a RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
+      S.vista = 'sugerencias'; await recargar('¡Gracias! Tu sugerencia le llegó al jefe de producción.');
+    }catch(e){ $('#sErr').textContent = msgError(e); }
+    finally{ const b = $('#sEnviar'); if(b) b.disabled = false; }
+  };
+}
+
+// ---- protección de datos en pantalla ----
+// Una página web no puede bloquear las capturas del celular. Lo que sí se hace: marca de agua con el
+// nombre, legajo, fecha y hora (toda captura queda identificada), sin copiar texto ni menú de mantener
+// apretado, y la pantalla se tapa cuando se sale de la app (vista de apps recientes / grabación).
+function marcaDeAgua(){
+  const e = S.data && S.data.empleado; const m = document.getElementById('marca');
+  if(!e){ document.body.classList.remove('seguro'); return; }
+  const d = new Date(), txt = `${nomTitulo(e.nombre)} · leg. ${e.legajo} · ${d.toLocaleDateString('es-AR')} ${d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="170"><text x="10" y="100" transform="rotate(-25 150 85)" font-family="Arial" font-size="15" fill="#ffffff">${esc(txt)}</text></svg>`;
+  m.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+  document.body.classList.add('seguro');
+}
+const tapar = v => document.body.classList.toggle('tapado', !!v && !!S.token);
+document.addEventListener('visibilitychange', ()=>tapar(document.hidden));
+window.addEventListener('blur', ()=>tapar(true));
+window.addEventListener('pagehide', ()=>tapar(true));
+document.getElementById('tapa').addEventListener('click', ()=>tapar(false));
+window.addEventListener('focus', ()=>setTimeout(()=>tapar(false), 150));
+document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('seguro') && !/INPUT|TEXTAREA/.test(e.target.tagName)) e.preventDefault(); });
+setInterval(()=>{ if(S.data) marcaDeAgua(); }, 60000);
+
+// ---- arranque ----
+if(S.token){ tocarActividad(); cargarYMostrar(); } else pantallaLogin();
+</script>
+</body>
+</html>
