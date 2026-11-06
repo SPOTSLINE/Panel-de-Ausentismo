@@ -1,0 +1,17 @@
+{
+  "id": "/Panel-de-Ausentismo/portal_empleado.html",
+  "name": "Mi Spotsline",
+  "short_name": "Mi Spotsline",
+  "description": "Vacaciones, recibos, trámites y producción del personal de Spotsline.",
+  "start_url": "/Panel-de-Ausentismo/portal_empleado.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "mi_spotsline_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "mi_spotsline_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

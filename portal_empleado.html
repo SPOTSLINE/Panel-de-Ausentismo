@@ -6,6 +6,12 @@
 <meta name="robots" content="noindex">
 <title>Mi Spotsline — Portal del empleado</title>
 <meta name="theme-color" content="#111111">
+<link rel="manifest" href="mi_spotsline.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="mi_spotsline_192.png">
+<link rel="apple-touch-icon" href="mi_spotsline_180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Mi Spotsline">
 <style>
   :root{
     --bg:#0f0f0f; --panel:#1a1a1a; --panel-2:#232323; --line:#333; --text:#f0f0f0; --muted:#a3a3a3;
@@ -71,6 +77,16 @@
   label.f.paso:first-of-type{margin-top:4px} label.f.paso small{font-weight:400;font-size:13px;color:var(--muted)}
   label.f.paso .pn{flex:0 0 28px;height:28px;border-radius:50%;background:var(--yellow);color:#111;display:inline-flex;align-items:center;justify-content:center;font:800 15px var(--mono)}
   .sugcat:last-child:nth-child(odd){grid-column:span 2}
+  #instBar{position:fixed;left:10px;right:10px;bottom:10px;z-index:60;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--yellow);border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.35;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  #instBar span{flex:1} #instBar .btn{width:auto;margin:0;padding:10px 14px;font-size:14.5px}
+  #instBar .instNo{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px}
+  .tile.prod{grid-column:span 2;flex-direction:row;align-items:flex-start;gap:12px;min-height:0;justify-content:flex-start;border-color:var(--yellow);cursor:default}
+  .tile.prod.off{border-color:var(--line);cursor:pointer;align-items:center}
+  .prod-acc{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .prod-acc .btn{width:auto;flex:1 1 140px;margin:0;padding:11px 12px;font-size:14.5px}
+  .qr-caja{position:relative;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:3/4;max-height:62vh;margin:10px 0}
+  .qr-caja video{width:100%;height:100%;object-fit:cover;display:block}
+  .qr-marco{position:absolute;inset:18% 14%;border:3px solid var(--yellow);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
   .tile.sug{grid-column:span 2;flex-direction:row;align-items:center;gap:12px;min-height:0;justify-content:flex-start}
   .hide{display:none!important}
   /* protección: sin selección de texto ni menú de mantener apretado, marca de agua y tapa al salir de la app */
@@ -221,6 +237,7 @@ async function cargarYMostrar(toast){
     const r = await rpc('rrhh_emp_datos', { p_token:S.token });
     S.data = r; S.cfg = r.config || {};
     await cargarSugerencias();
+    await cargarProduccion();
     if(r.debe_cambiar && S.clave){ pantallaClave(true); return; }
     if(!r.empleado){ $('#app').innerHTML = `<div class="card top"><h2>Sin datos</h2><p class="muted">Todavía no hay información tuya publicada. Avisale a RRHH.</p><button class="btn sec" onclick="salir()">Salir</button></div>`; return; }
     mostrar(S.vista || 'inicio', toast);
@@ -247,8 +264,9 @@ function pie(){
     <button class="btn link" style="width:auto;display:inline" onclick="mostrar('clave')">Cambiar mi clave</button></div>`;
 }
 function mostrar(v, toast){
+  if(v!=='escanear') pararQR();
   S.vista = v; window.scrollTo(0,0); marcaDeAgua();
-  const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, sugerencias:vSugerencias, sugerir:vSugerir, clave:()=>pantallaClave(false) };
+  const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, sugerencias:vSugerencias, sugerir:vSugerir, produccion:vProduccion, escanear:vEscanear, clave:()=>pantallaClave(false) };
   (V[v] || vInicio)();
   if(toast){ const t = document.createElement('div'); t.className = 'card'; t.style.cssText = 'border-color:var(--good);color:var(--good);font-size:14.5px'; t.textContent = toast;
     const w = $('#app'); const h = w.querySelector('.head, .back'); if(h && h.nextSibling) w.insertBefore(t, h.nextSibling); else w.prepend(t); setTimeout(()=>t.remove(), 6000); }
@@ -268,6 +286,7 @@ function vInicio(){
       <button class="tile big" onclick="mostrar('vacaciones')"><div><div class="t">🏖️ Mis vacaciones</div><div class="s">Ciclo ${esc(v.lbl||'')} · ${esc(v.periodo||'')}</div></div>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px"><div><div class="n">${act.restante!=null?esc(act.restante):'—'}</div><div class="s">días para pedir este ciclo</div></div>
         <span class="btn" style="width:auto;margin:0;padding:10px 14px;font-size:14px" onclick="event.stopPropagation();mostrar('pedirVac')">Pedir</span></div></button>
+      ${tileProduccion()}
       ${recibosUrl() ? `<a class="tile" href="${esc(recibosUrl())}" target="_blank" rel="noopener"><div class="ico">🧾</div><div><div class="t">Recibos de sueldo</div><div class="s">Ir a la plataforma ↗</div></div></a>` : ''}
       <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Mis pedidos</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
       <button class="tile" onclick="mostrar('tramites')"><div class="ico">📝</div><div><div class="t">Trámites</div><div class="s">Constancias, avisar una ausencia, consultas</div></div></button>
@@ -621,7 +640,122 @@ window.addEventListener('focus', ()=>setTimeout(()=>tapar(false), 150));
 document.addEventListener('contextmenu', e=>{ if(document.body.classList.contains('seguro') && !/INPUT|TEXTAREA/.test(e.target.tagName)) e.preventDefault(); });
 setInterval(()=>{ if(S.data) marcaDeAgua(); }, 60000);
 
+// ================= PRODUCCIÓN (app única) =================
+// Si la persona está habilitada en el Panel de Producción (activa en su maestro y, en pintura/armado,
+// con clave de operario asignada), aparece el recuadro "Producción": escanear el QR de la orden o cargar
+// su producción. Producción se abre en esta misma pestaña y ya la reconoce con la sesión de Mi Spotsline.
+const PROD_URL = 'https://spotsline.github.io/Panel-produccion/';
+const PROD_AREAS = { taller:'Fábrica', pintura:'Pintura', armado:'Armado', expedicion:'Expedición', matriceria:'Matricería', mantenimiento:'Mantenimiento' };
+async function cargarProduccion(){
+  try{ S.prod = await rpc('rrhh_emp_produccion', { p_token:S.token }); }
+  catch(e){ if(e.message==='sesion') throw e; S.prod = null; }
+}
+const prodOk = () => !!(S.prod && S.prod.ok && S.prod.op);
+function prodDestino(){
+  const a = S.prod && S.prod.area;
+  return PROD_URL + '#' + (a==='pintura' || a==='armado' ? a : 'ot');
+}
+function irAProduccion(url){
+  if(!S.token) return;
+  try{ sessionStorage.setItem('rrhh_tok', S.token); }catch(e){}
+  location.href = url;
+}
+function tileProduccion(){
+  if(!prodOk()) return '';
+  const p = S.prod, area = PROD_AREAS[p.area] || p.area || '';
+  if(!p.habilitado) return `<button class="tile prod off" onclick="mostrar('produccion')"><div class="ico" style="font-size:28px">🏭</div><div><div class="t">Producción</div><div class="s">Todavía no estás habilitado para cargar producción${area?' en '+esc(area):''}.</div></div></button>`;
+  return `<div class="tile prod"><div class="ico" style="font-size:28px">🏭</div><div style="flex:1"><div class="t">Producción${area?' · '+esc(area):''}</div><div class="s">Escaneá el QR de la orden o cargá tu producción del día.</div>
+    <div class="prod-acc"><span class="btn" onclick="event.stopPropagation();mostrar('escanear')">📷 Escanear QR</span><span class="btn sec" onclick="event.stopPropagation();irAProduccion(prodDestino())">Cargar producción</span></div></div></div>`;
+}
+function vProduccion(){
+  const p = S.prod || {}, area = PROD_AREAS[p.area] || p.area || '';
+  $('#app').innerHTML = volver() + `<h2>🏭 Producción</h2>` + (!prodOk() ? `<div class="card"><p class="muted" style="margin:0">No figurás en el Panel de Producción. Si tenés que cargar producción, avisale a tu supervisor.</p></div>`
+    : !p.habilitado ? `<div class="card top"><p style="margin:0 0 6px"><b>Todavía no estás habilitado para cargar producción${area?' en '+esc(area):''}.</b></p><p class="muted small" style="margin:0">Lo habilita tu supervisor en el Panel de Producción (Maestro → Personal → clave de operario). Cuando lo haga, vas a poder entrar desde acá.</p></div>`
+    : `<div class="card top"><div class="muted small">${esc(nomTitulo(p.nombre||''))}${area?' · '+esc(area):''}${p.derivado?' (derivado hoy)':''}</div>
+        <button class="btn" onclick="mostrar('escanear')">📷 Escanear el QR de la orden</button>
+        <button class="btn sec" onclick="irAProduccion(prodDestino())">${p.area==='pintura'||p.area==='armado' ? 'Cargar producción de '+esc(area) : 'Elegir la orden de la lista'}</button>
+        <div class="info">Producción se abre con tu nombre: no hace falta elegirlo ni poner la clave de operario. Para volver, tocá <b>‹ Mi Spotsline</b>.</div></div>`) + pie();
+}
+// ---- lector de QR (cámara) ----
+let _qr = null;
+function pararQR(){ if(!_qr) return; _qr.fin = true; try{ _qr.stream && _qr.stream.getTracks().forEach(t=>t.stop()); }catch(e){} _qr = null; }
+function cargarJsQR(){
+  if(window.jsQR) return Promise.resolve(window.jsQR);
+  return new Promise((ok, mal)=>{ const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+    s.onload = ()=>window.jsQR ? ok(window.jsQR) : mal(new Error('qr')); s.onerror = ()=>mal(new Error('qr')); document.head.appendChild(s); });
+}
+function urlProduccionDeQR(txt){
+  try{ const u = new URL(String(txt||'').trim()); if(u.origin==='https://spotsline.github.io' && /^\/Panel-produccion(\/|$)/.test(u.pathname)) return u.href; }catch(e){}
+  return null;
+}
+async function vEscanear(){
+  pararQR();
+  if(!prodOk() || !S.prod.habilitado){ mostrar('produccion'); return; }
+  $('#app').innerHTML = `<button class="back" id="qrVolver">‹ Volver</button><h2>📷 Escaneá el QR de la orden</h2>
+    <div class="qr-caja"><video id="qrVid" playsinline muted></video><div class="qr-marco"></div></div>
+    <div class="err" id="qrErr"></div><div class="muted small" id="qrEst" style="text-align:center;margin-top:8px">Abriendo la cámara…</div>
+    <button class="btn sec" onclick="irAProduccion(prodDestino())">No tengo el QR: elegir de la lista</button>`;
+  $('#qrVolver').onclick = ()=>{ pararQR(); mostrar('produccion'); };
+  const err = t => { const e = $('#qrErr'); if(e) e.textContent = t; const s = $('#qrEst'); if(s) s.textContent = ''; };
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ err('Este celular no deja usar la cámara desde la app. Escaneá el QR con la cámara del celular o elegí la orden de la lista.'); return; }
+  const ctl = _qr = { fin:false, stream:null };
+  try{ ctl.stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } }, audio:false }); }
+  catch(e){ if(_qr===ctl) err('No se pudo abrir la cámara. Fijate de darle permiso a la cámara para este sitio y probá de nuevo.'); return; }
+  if(ctl.fin || _qr!==ctl){ try{ ctl.stream.getTracks().forEach(t=>t.stop()); }catch(e){} return; }
+  const vid = $('#qrVid'); vid.srcObject = ctl.stream; try{ await vid.play(); }catch(e){}
+  $('#qrEst').textContent = 'Apuntá al QR de la hoja de la orden.';
+  let det = null, jsqr = null, cv = null, cx = null;
+  try{ if('BarcodeDetector' in window){ const f = await window.BarcodeDetector.getSupportedFormats(); if(f.includes('qr_code')) det = new window.BarcodeDetector({ formats:['qr_code'] }); } }catch(e){ det = null; }
+  if(!det){ try{ jsqr = await cargarJsQR(); cv = document.createElement('canvas'); cx = cv.getContext('2d', { willReadFrequently:true }); }catch(e){ err('No se pudo cargar el lector de QR. Revisá la conexión o elegí la orden de la lista.'); pararQR(); return; } }
+  let ultimoMal = '';
+  const leer = async ()=>{
+    if(ctl.fin || _qr!==ctl) return;
+    let txt = null;
+    try{
+      if(vid.readyState >= 2){
+        if(det){ const r = await det.detect(vid); if(r && r.length) txt = r[0].rawValue; }
+        else { const w = vid.videoWidth, h = vid.videoHeight; if(w && h){ const k = Math.min(1, 640/Math.max(w,h)); cv.width = Math.round(w*k); cv.height = Math.round(h*k);
+          cx.drawImage(vid, 0, 0, cv.width, cv.height); const im = cx.getImageData(0, 0, cv.width, cv.height); const r = jsqr(im.data, cv.width, cv.height, { inversionAttempts:'dontInvert' }); if(r) txt = r.data; } }
+      }
+    }catch(e){}
+    if(txt){
+      const url = urlProduccionDeQR(txt);
+      if(url){ $('#qrEst').textContent = 'Listo, abriendo la orden…'; pararQR(); irAProduccion(url); return; }
+      if(txt!==ultimoMal){ ultimoMal = txt; $('#qrErr').textContent = 'Ese QR no es de una orden de Producción de Spotsline.'; }
+    }
+    setTimeout(leer, 250);
+  };
+  leer();
+}
+
+// ================= INSTALAR COMO APP =================
+// Android (Chrome): botón "Instalar Mi Spotsline" (ícono en el celular, abre a pantalla completa).
+// iPhone: Apple no permite el botón; se muestran los pasos (Compartir → Agregar a inicio).
+let _instalar = null;
+const yaInstalada = () => { try{ return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }catch(e){ return false; } };
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+function barraInstalar(){
+  let b = document.getElementById('instBar');
+  const cerrada = (()=>{ try{ return Number(localStorage.getItem('mi_spl_inst_no')||0) > Date.now(); }catch(e){ return false; } })();
+  const mostrar = !yaInstalada() && !cerrada && (_instalar || esIOS());
+  if(!mostrar){ if(b) b.remove(); return; }
+  if(!b){ b = document.createElement('div'); b.id = 'instBar'; document.body.appendChild(b); }
+  b.innerHTML = _instalar
+    ? `<span>📲 <b>Instalá Mi Spotsline</b> en tu celular para entrar con un toque.</span><button class="btn" id="instSi">Instalar</button><button class="instNo" id="instNo" aria-label="Ahora no">✕</button>`
+    : `<span>📲 Para tenerla como app: tocá <b>Compartir</b> ⬆ y después <b>Agregar a inicio</b>.</span><button class="instNo" id="instNo" aria-label="Cerrar">✕</button>`;
+  const si = document.getElementById('instSi');
+  if(si) si.onclick = async ()=>{ const ev = _instalar; _instalar = null; if(!ev) return; ev.prompt(); try{ await ev.userChoice; }catch(e){} barraInstalar(); };
+  document.getElementById('instNo').onclick = ()=>{ try{ localStorage.setItem('mi_spl_inst_no', String(Date.now() + 7*864e5)); }catch(e){} barraInstalar(); };
+}
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); _instalar = e; barraInstalar(); });
+window.addEventListener('appinstalled', ()=>{ _instalar = null; barraInstalar(); });
+if('serviceWorker' in navigator && /^https:/.test(location.protocol)){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('mi_spotsline_sw.js', { scope:'./' }).catch(()=>{}); });
+}
+setTimeout(barraInstalar, 1500);
+
 // ---- arranque ----
+if(/^#(produccion|escanear)$/.test(location.hash)){ S.vista = location.hash.slice(1); try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} }
 if(S.token){ tocarActividad(); cargarYMostrar(); } else pantallaLogin();
 </script>
 </body>
