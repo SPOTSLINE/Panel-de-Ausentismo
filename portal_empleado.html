@@ -288,7 +288,7 @@ function vInicio(){
         <span class="btn" style="width:auto;margin:0;padding:10px 14px;font-size:14px" onclick="event.stopPropagation();mostrar('pedirVac')">Pedir</span></div></button>
       ${tileProduccion()}
       ${recibosUrl() ? `<a class="tile" href="${esc(recibosUrl())}" target="_blank" rel="noopener"><div class="ico">🧾</div><div><div class="t">Recibos de sueldo</div><div class="s">Ir a la plataforma ↗</div></div></a>` : ''}
-      <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Mis pedidos</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
+      <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Seguimiento de mis trámites</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
       <button class="tile" onclick="mostrar('tramites')"><div class="ico">📝</div><div><div class="t">Trámites</div><div class="s">Constancias, avisar una ausencia, consultas</div></div></button>
       <button class="tile" onclick="mostrar('datos')"><div class="ico">👤</div><div><div class="t">Mis datos</div><div class="s">Ver y pedir cambios</div></div></button>
       ${S.sugOk!==false ? `<button class="tile sug" onclick="mostrar('sugerencias')"><div class="ico" style="font-size:28px">💡</div><div><div class="t">Buzón de sugerencias</div><div class="s">${sugNuevas()?`<b style="color:var(--yellow)">${sugNuevas()} respuesta(s) nueva(s)</b>`:'Ideas para trabajar mejor, más rápido y con menos desperdicio'}</div></div></button>` : ''}
@@ -300,7 +300,7 @@ function vInicio(){
 function vVacaciones(){
   const v = E().vac || {}, a = v.actual || {};
   const sols = v.solicitudes || [];
-  const pedVac = pedidos().filter(p=>p.tipo==='vacaciones' && p.estado==='pendiente');
+  const pedVac = pedidos().filter(p=>p.tipo==='vacaciones' && p.estado==='pendiente' && !sols.some(s=>s.portal && s.estado!=='cancelada' && s.desde===(p.datos||{}).desde && s.hasta===(p.datos||{}).hasta));
   $('#app').innerHTML = volver() + `<h2>Mis vacaciones</h2>
     <div class="card top"><div class="muted small">Ciclo ${esc(v.lbl||'')} · ${esc(v.periodo||'')}</div>
       <div class="stats"><div class="stat"><b>${esc(a.disponible??'—')}</b><span>disponibles</span></div><div class="stat"><b>${esc(a.asignado??'—')}</b><span>ya asignados</span></div><div class="stat hl"><b>${esc(a.restante??'—')}</b><span>te quedan</span></div></div>
@@ -328,7 +328,7 @@ function vPedirVac(){
       <label class="f" for="vObs">Comentario para RRHH (opcional)</label><textarea id="vObs" maxlength="300" placeholder="Ej.: si no se puede esa semana, me sirve la siguiente"></textarea>
       <button class="btn" id="vEnviar">Enviar pedido</button>
       <div class="err" id="vErr"></div>
-      <div class="info">Lo revisa RRHH y lo autoriza tu jefe. Vas a ver la respuesta en <b>Mis pedidos</b>. Por ley, las vacaciones se notifican con 45 días de anticipación: pedilas con tiempo.</div>
+      <div class="info">Lo revisa RRHH y lo autoriza tu jefe. Vas a ver la respuesta en <b>Seguimiento de mis trámites</b>. Por ley, las vacaciones se notifican con 45 días de anticipación: pedilas con tiempo.</div>
     </div>`;
   const calc = ()=>{
     const d1 = $('#vDesde').value, d2 = $('#vHasta').value, al = [], fer = S.cfg.feriados || [];
@@ -372,7 +372,7 @@ function detallePedido(p){
 }
 function vPedidos(){
   const L = pedidos();
-  $('#app').innerHTML = volver() + `<h2>Mis pedidos</h2><div class="card">${L.length ? L.map(p=>`
+  $('#app').innerHTML = volver() + `<h2>Seguimiento de mis trámites</h2><div class="card">${L.length ? L.map(p=>`
     <div class="ped"><div class="top"><b>${esc(TIPOS[p.tipo]||p.tipo)}</b><span class="est ${p.estado}">${esc(ESTADOS[p.estado]||p.estado)}</span></div>
       <div class="small" style="margin-top:4px">${detallePedido(p)}</div>
       <div class="muted small" style="margin-top:2px">Enviado el ${esc(fmtFH(p.creado))}</div>${adjuntosHtml(p)}
@@ -438,7 +438,7 @@ function vTramites(){
     constancia: `<label class="f" for="tQue">¿Qué necesitás?</label><select id="tQue"><option>Certificado de trabajo y servicios</option><option>Certificado de vacaciones</option></select>
       <label class="f" for="tPara">¿Para presentar dónde? (opcional)</label><input id="tPara" maxlength="120" placeholder="Ej.: banco, escuela, ANSES, alquiler">
       <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
-    ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Le llega a <b>tu jefe</b> y a <b>RRHH</b>. Si tenés el certificado, adjuntalo; si no, lo podés agregar después desde <b>Mis pedidos</b>.</p>
+    ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Le llega a <b>tu jefe</b> y a <b>RRHH</b>. Si tenés el certificado, adjuntalo; si no, lo podés agregar después desde <b>Seguimiento de mis trámites</b>.</p>
       <label class="f" for="tDesde">Desde</label><input type="date" id="tDesde" value="${isoDe(new Date())}"><label class="f" for="tHasta">Hasta</label><input type="date" id="tHasta" value="${isoDe(new Date())}">
       <label class="f" for="tMot">Motivo</label><select id="tMot"><option>Enfermedad</option><option>Familiar enfermo</option><option>Turno médico</option><option>Examen / estudio</option><option>Trámite personal</option><option>Fallecimiento de familiar</option><option>Nacimiento</option><option>Otro</option></select>
       <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>
@@ -460,7 +460,7 @@ function vTramites(){
       if(!r.ok){ $('#tErr').textContent = ({ fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
       if(tipo==='ausencia' && S.adjAus && r.pedido){ try{ await subirAdjunto(r.pedido.id, S.adjAus); S.adjAus = null; }
         catch(e){ S.adjAus = null; S.vista = 'pedidos'; await recargar('El aviso se envió, pero el certificado no se pudo subir. Adjuntalo de nuevo desde acá.'); return; } }
-      S.vista = 'pedidos'; await recargar(tipo==='ausencia' ? 'Aviso enviado. Ya les llegó a tu jefe y a RRHH.' : 'Enviado. La respuesta de RRHH aparece en Mis pedidos.');
+      S.vista = 'pedidos'; await recargar(tipo==='ausencia' ? 'Aviso enviado. Ya les llegó a tu jefe y a RRHH.' : 'Enviado. La respuesta de RRHH aparece en Seguimiento de mis trámites.');
     }catch(e){ $('#tErr').textContent = msgError(e); } finally{ const b = $('#tEnviar'); if(b) b.disabled = false; }
   }
   pint();
@@ -655,17 +655,20 @@ function prodDestino(){
   const a = S.prod && S.prod.area;
   return PROD_URL + '#' + (a==='pintura' || a==='armado' ? a : 'ot');
 }
-function irAProduccion(url){
+function irAProduccion(url, sup){
   if(!S.token) return;
-  try{ sessionStorage.setItem('rrhh_tok', S.token); }catch(e){}
+  try{ sessionStorage.setItem('rrhh_tok', S.token); if(sup) sessionStorage.setItem('spl.modoSup', '1'); else sessionStorage.removeItem('spl.modoSup'); }catch(e){}
   location.href = url;
 }
+// supervisores y otros usuarios del Panel de Producción: entran con su usuario y clave de Producción
+const esOperaciones = () => /OPERACIONES/i.test((E() && E().gerencia) || '');
+const linkSupervisor = () => `<button class="btn link" style="width:auto;display:inline;font-size:14px" onclick="event.stopPropagation();irAProduccion(PROD_URL+'#ingreso', true)">Soy supervisor: entrar con mi usuario de Producción</button>`;
 function tileProduccion(){
-  if(!prodOk()) return '';
+  if(!prodOk()) return esOperaciones() ? `<button class="tile prod off" onclick="irAProduccion(PROD_URL+'#ingreso', true)"><div class="ico" style="font-size:28px">🏭</div><div><div class="t">Producción</div><div class="s">Entrar con mi usuario de Producción (supervisores)</div></div></button>` : '';
   const p = S.prod, area = PROD_AREAS[p.area] || p.area || '';
-  if(!p.habilitado) return `<button class="tile prod off" onclick="mostrar('produccion')"><div class="ico" style="font-size:28px">🏭</div><div><div class="t">Producción</div><div class="s">Todavía no estás habilitado para cargar producción${area?' en '+esc(area):''}.</div></div></button>`;
+  if(!p.habilitado) return `<button class="tile prod off" onclick="mostrar('produccion')"><div class="ico" style="font-size:28px">🏭</div><div><div class="t">Producción</div><div class="s">Todavía no estás habilitado para cargar producción${area?' en '+esc(area):''}. Si sos supervisor, entrá con tu usuario.</div></div></button>`;
   return `<div class="tile prod"><div class="ico" style="font-size:28px">🏭</div><div style="flex:1"><div class="t">Producción${area?' · '+esc(area):''}</div><div class="s">Escaneá el QR de la orden o cargá tu producción del día.</div>
-    <div class="prod-acc"><span class="btn" onclick="event.stopPropagation();mostrar('escanear')">📷 Escanear QR</span><span class="btn sec" onclick="event.stopPropagation();irAProduccion(prodDestino())">Cargar producción</span></div></div></div>`;
+    <div class="prod-acc"><span class="btn" onclick="event.stopPropagation();mostrar('escanear')">📷 Escanear QR</span><span class="btn sec" onclick="event.stopPropagation();irAProduccion(prodDestino())">Cargar producción</span></div><div style="margin-top:8px;text-align:right"><span class="muted small" style="text-decoration:underline;cursor:pointer" onclick="event.stopPropagation();irAProduccion(PROD_URL+'#ingreso', true)">¿Sos supervisor? Entrá con tu usuario</span></div></div></div>`;
 }
 function vProduccion(){
   const p = S.prod || {}, area = PROD_AREAS[p.area] || p.area || '';
@@ -674,7 +677,8 @@ function vProduccion(){
     : `<div class="card top"><div class="muted small">${esc(nomTitulo(p.nombre||''))}${area?' · '+esc(area):''}${p.derivado?' (derivado hoy)':''}</div>
         <button class="btn" onclick="mostrar('escanear')">📷 Escanear el QR de la orden</button>
         <button class="btn sec" onclick="irAProduccion(prodDestino())">${p.area==='pintura'||p.area==='armado' ? 'Cargar producción de '+esc(area) : 'Elegir la orden de la lista'}</button>
-        <div class="info">Producción se abre con tu nombre: no hace falta elegirlo ni poner la clave de operario. Para volver, tocá <b>‹ Mi Spotsline</b>.</div></div>`) + pie();
+        <div class="info">Producción se abre con tu nombre: no hace falta elegirlo ni poner la clave de operario. Para volver, tocá <b>‹ Mi Spotsline</b>.</div></div>`)
+    + `<div class="card"><div class="muted small" style="margin-bottom:4px">¿Tenés usuario de supervisor en Producción?</div>${linkSupervisor()}<div class="muted small">Se abre la pantalla de ingreso: elegís tu usuario y ponés tu clave de Producción.</div></div>` + pie();
 }
 // ---- lector de QR (cámara) ----
 let _qr = null;

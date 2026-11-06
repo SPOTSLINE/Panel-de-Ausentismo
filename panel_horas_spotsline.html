@@ -6870,10 +6870,15 @@ const Vac = (function(){
     const e = PERSONAL.find(x=>x.id===o.pid); if(!e){ alert('La persona no está en el listado.'); return false; }
     const al = alertasPara(o);
     const autorizo = (o.autorizar && puedeAutorizar() && orgPuedeAutorizar(o.pid)) ? { nombre:ACCESO.usuario.nombre, fecha:new Date().toISOString(), por:ACCESO.usuario.nombre, alertas:al } : null;
-    let ya = false;
-    const ok = await mutar(d=>{ if(d.solicitudes.some(s=>s.solRef===o.solRef && !s.cancelada)){ ya = true; return; }
+    let ya = false, actualizo = '';
+    const ok = await mutar(d=>{ const ex = d.solicitudes.find(s=>s.solRef===o.solRef && !s.cancelada);
+      if(ex){ ya = true; const c = [];
+        if(o.ciclo!=null && o.ciclo!=='' && Number(ex.ciclo)!==Number(o.ciclo)){ ex.ciclo = Number(o.ciclo); c.push('imputa a '+cicloLbl(Number(o.ciclo))); }
+        if(autorizo && !ex.autorizo){ ex.autorizo = autorizo; c.push('autorizó '+autorizo.nombre); }
+        actualizo = c.join(' · '); return; }
       const nueva = { id:uid(), pid:o.pid, desde:o.desde, hasta:o.hasta, dias:o.dias, obs:o.obs||'', alertaFecha:!validateStartDate(o.desde), autorizo, solRef:o.solRef }; if(o.ciclo!=null && o.ciclo!=='') nueva.ciclo = Number(o.ciclo); d.solicitudes.push(nueva); });
     if(!ok){ alert('No se pudo guardar en Vacaciones. Probá de nuevo.'); return false; }
+    if(ya && actualizo) registrarCambio('Vacaciones', 'Pedido del portal aprobado por RRHH', `${e.nombre} · ${fmtDisplay(o.desde)} a ${fmtDisplay(o.hasta)} · ${actualizo}`);
     if(!ya) registrarCambio('Vacaciones', 'Solicitud cargada desde el portal', `${e.nombre} · ${fmtDisplay(o.desde)} a ${fmtDisplay(o.hasta)} (${o.dias} días)${o.ciclo?' · imputa a '+cicloLbl(Number(o.ciclo)):''}${autorizo?' · autorizó '+autorizo.nombre:' · falta autorización'}${al.length?' · obs: '+al.join(' / '):''}`);
     if(uiOk) render();
     return true;
@@ -8795,7 +8800,7 @@ const PortalRRHH = (function(){
     if(p.tipo==='vacaciones'){
       if(ACCESO.esAdmin || puede('vacaciones')){
         b.push(`<label class="chk">Imputar a <select data-pciclo="${p.id}" style="width:auto;padding:4px 6px">${Vac.htmlOpcionesCiclo(p.pid, (p.datos||{}).desde, '')}</select></label>`);
-        b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar y pasar a Vacaciones</button>`);
+        b.push(`<button class="btn small" data-paprobar="${p.id}">Aprobar</button> <span class="note">ya figura en Vacaciones como "Falta autorizar"</span>`);
       }
       if(puede('vacAutorizar') && orgPuedeAutorizar(p.pid)) b.push(`<label class="chk"><input type="checkbox" data-paut="${p.id}" checked> autorizar también como jefe</label>`);
       else if(orgAutoriza(p.pid)) b.push(`<span class="note">La autoriza ${escHtml(orgTit(orgAutoriza(p.pid)))}</span>`);
