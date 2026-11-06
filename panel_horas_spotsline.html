@@ -945,6 +945,7 @@
 <main>
   <div class="kpis" id="kpiRow"></div>
 
+  <div class="usr-aviso" id="avisoJefe" style="display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0; border-color:var(--danger);"></div>
   <section id="tab-detalle" class="tabpanel">
     <div id="printFlexHead">
       <div class="print-header" style="display:none">
@@ -1265,7 +1266,7 @@
         <select id="vacFiltroEstado" style="max-width:240px;">
           <option value="">Todos los estados</option>
           <option value="faltaAut">Falta autorizar</option>
-          <option value="mias">Me toca autorizar (mi gente)</option>
+          <option value="mias">Me toca autorizar (mi gente directa)</option>
           <option value="obs">Con observaciones</option>
           <option value="excep">Autorizadas con observaciones</option>
           <option value="ok">Autorizadas</option>
@@ -4504,6 +4505,7 @@ async function boot(){
   if(!_panelIniciado){ _panelIniciado = true; await init(); }
   activarPrimeraTabPermitida();
   renderTabsNuevas();
+  iniciarAvisosJefe();
 }
 
 // ====== pestaña Usuarios (solo administrador) ======
@@ -5333,6 +5335,7 @@ async function mutarOrg(fn, aud){
   if(!ok){ alert('No se pudo guardar. Probá de nuevo.'); return false; }
   ORG = data;
   if(aud) registrarCambio('Organigrama', aud[0], aud[1]);
+  revisarAvisosJefe();
   portalProgramarPublicacion();
   return true;
 }
@@ -5683,6 +5686,65 @@ async function importarCategoriasRecibo(file){
   }catch(err){ st.style.color = 'var(--danger)'; st.textContent = 'No se pudieron leer las categorías: ' + err.message; }
 }
 
+// ---- aviso al jefe: vacaciones de su gente para autorizar ----
+// En el panel: cartel arriba + número rojo en la pestaña Vacaciones (se revisa al entrar y cada 5 minutos).
+// Para el Panel de Paneles: fila avisos_jefes_v1 con cuántas tiene pendientes cada jefe directo.
+const AVISOS_ROW_ID = 'avisos_jefes_v1';
+const orgRaiz = () => Object.keys(ORG.externos)[0] || '';
+function orgPendientesSol(sols){
+  return (sols||[]).filter(s=>{ if(s.cancelada || s.autorizo) return false; const p = orgPersona(s.pid); return p && !esBaja(p); });
+}
+const orgJefeAviso = pid => orgJefeDe(pid) || orgRaiz();
+function misPendientesAutorizar(sols){
+  const yo = orgMiNodo(); if(!yo || !(ACCESO.esAdmin || puede('vacAutorizar'))) return [];
+  return orgPendientesSol(sols).filter(s=>orgJefeAviso(s.pid)===yo);
+}
+function pintarAvisoJefe(sols){
+  const L = misPendientesAutorizar(sols);
+  const btn = document.querySelector('.tab-btn[data-tab="vacaciones"]');
+  if(btn){ let b = btn.querySelector('.tab-badge.jefe'); if(!b){ b = document.createElement('span'); b.className = 'tab-badge jefe'; b.title = 'Vacaciones de tu gente para autorizar'; btn.appendChild(b); } b.textContent = L.length ? String(L.length) : ''; }
+  const el = document.getElementById('avisoJefe'); if(!el) return;
+  if(!L.length){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  const nombres = [...new Set(L.map(s=>orgCorto(orgNombre(s.pid))))];
+  el.innerHTML = `<span>🔔 <b>Tenés ${L.length} solicitud${L.length===1?'':'es'} de vacaciones para autorizar</b> — ${escHtml(nombres.slice(0,6).join(', '))}${nombres.length>6?'…':''}</span><button class="btn small" id="avisoJefeVer">Ver y autorizar</button>`;
+  el.style.display = 'flex';
+  document.getElementById('avisoJefeVer').onclick = irAAutorizar;
+}
+function irAAutorizar(){
+  const b = document.querySelector('.tab-btn[data-tab="vacaciones"]');
+  if(!b || b.hidden){ alert('Tu usuario no tiene la pestaña Vacaciones: pedila en Usuarios del Panel de Paneles.'); return; }
+  b.click();
+  setTimeout(()=>{ try{ Vac.verMias(); }catch(e){} }, 400);
+}
+let _avisosFirma = null;
+async function actualizarAvisosJefes(sols){
+  const m = {};
+  orgPendientesSol(sols).forEach(s=>{ const j = orgJefeAviso(s.pid); if(j) (m[j] = m[j] || []).push(s); });
+  const jefes = Object.keys(m).sort().map(j=>({ nodo:j, nombre:orgNombre(j), n:m[j].length, usuario:ORG.usuarios[j] || null,
+    personas:[...new Set(m[j].map(s=>orgCorto(orgNombre(s.pid))))].slice(0,8) }));
+  const firma = JSON.stringify(jefes);
+  if(firma===_avisosFirma) return;
+  const r = await leerFilaEstricta(AVISOS_ROW_ID);
+  if(!r.ok) return;
+  if(r.valor && JSON.stringify(r.valor.jefes||[])===firma){ _avisosFirma = firma; return; }
+  if(await guardarFilaSupabase(AVISOS_ROW_ID, { updatedAt:new Date().toISOString(), jefes })) _avisosFirma = firma;
+}
+async function revisarAvisosJefe(){
+  try{
+    const r = await leerFilaEstricta('vacaciones_v1');
+    if(!r.ok) return;
+    const sols = (r.valor && Array.isArray(r.valor.solicitudes)) ? r.valor.solicitudes : [];
+    pintarAvisoJefe(sols);
+    await actualizarAvisosJefes(sols);
+  }catch(e){ console.warn('Aviso a jefes', e); }
+}
+let _avisoTimer = null;
+function iniciarAvisosJefe(){
+  revisarAvisosJefe();
+  if(!_avisoTimer) _avisoTimer = setInterval(revisarAvisosJefe, 5*60*1000);
+  if(location.hash==='#autorizar'){ setTimeout(irAAutorizar, 800); try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} }
+}
+
 // ---- ficha de la persona (todo lo que hay de ella en un solo lugar) ----
 async function abrirFicha(id){
   const p = PERSONAL.find(x=>x.id===id); if(!p) return;
@@ -5971,6 +6033,7 @@ const Vac = (function(){
     solicitudesTodas = data.solicitudes; solicitudes = solicitudesTodas.filter(s=>!s.cancelada); feriados = data.feriados;
     ajustes = data.ajustes; corrManual = data.corrManual; pendManual = data.pendManual; invalidar();
     portalProgramarPublicacion();
+    try{ pintarAvisoJefe(solicitudesTodas); actualizarAvisosJefes(solicitudesTodas); }catch(e){}
     return true;
   }
   function msg(t, err){ const el=$('vacFormMsg'); el.textContent=t; el.style.color = err ? 'var(--danger)' : 'var(--good)'; }
@@ -6270,7 +6333,7 @@ const Vac = (function(){
     if(f==='arrastre') return e.arrastre > 0;
     if(f==='arrastreLibre') return e.restAnterior > 0;
     if(f==='faltaAut') return ests.some(x=>x.k==='falta');
-    if(f==='mias') return orgEsSuJefe(e.id) && items.some(s=>!s.autorizo);
+    if(f==='mias') return !!orgMiNodo() && orgJefeAviso(e.id)===orgMiNodo() && items.some(s=>!s.autorizo);
     if(f==='obs') return ests.some(x=>x.al.length);
     if(f==='excep') return ests.some(x=>x.k==='excep');
     if(f==='ok') return ests.some(x=>x.k==='ok');
@@ -6731,7 +6794,8 @@ const Vac = (function(){
     if(uiOk) render();
     return true;
   }
-  return { init, render, resumenFicha, asegurar, feriadosActuales, alertasPara, saldoDe, resumenPortal, agregarExterna, htmlOpcionesCiclo, imprimirPorRef };
+  async function verMias(){ await asegurar(); setSub('solicitudes'); VAC_VIEW.estado = 'mias'; renderSolicitudes(); }
+  return { init, render, resumenFicha, asegurar, feriadosActuales, alertasPara, saldoDe, resumenPortal, agregarExterna, htmlOpcionesCiclo, imprimirPorRef, verMias };
 })();
 
 // ====== DATOS PERSONALES (DNI, CUIL, domicilio, nacimiento, contacto) ======
