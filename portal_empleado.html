@@ -63,6 +63,15 @@
   .seg button{flex:1;min-width:30%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px 8px;font:inherit;font-size:14px;cursor:pointer}
   .seg button.on{border-color:var(--yellow);color:var(--yellow);background:var(--yellow-dim)}
   .pie{margin-top:22px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.5}
+  .sugcats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .sugcat{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:left;color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+  .sugcat .ico{font-size:20px} .sugcat b{font-size:13.5px;line-height:1.25} .sugcat span:last-child{font-size:11.5px;color:var(--muted);line-height:1.3}
+  .sugcat.on{border-color:var(--yellow);background:var(--yellow-dim)} .sugcat.on b{color:var(--yellow)}
+  label.f.paso{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--text);margin:22px 0 10px}
+  label.f.paso:first-of-type{margin-top:4px} label.f.paso small{font-weight:400;font-size:13px;color:var(--muted)}
+  label.f.paso .pn{flex:0 0 28px;height:28px;border-radius:50%;background:var(--yellow);color:#111;display:inline-flex;align-items:center;justify-content:center;font:800 15px var(--mono)}
+  .sugcat:last-child:nth-child(odd){grid-column:span 2}
+  .tile.sug{grid-column:span 2;flex-direction:row;align-items:center;gap:12px;min-height:0;justify-content:flex-start}
   .hide{display:none!important}
   /* protección: sin selección de texto ni menú de mantener apretado, marca de agua y tapa al salir de la app */
   body.seguro{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -211,6 +220,7 @@ async function cargarYMostrar(toast){
   try{
     const r = await rpc('rrhh_emp_datos', { p_token:S.token });
     S.data = r; S.cfg = r.config || {};
+    await cargarSugerencias();
     if(r.debe_cambiar && S.clave){ pantallaClave(true); return; }
     if(!r.empleado){ $('#app').innerHTML = `<div class="card top"><h2>Sin datos</h2><p class="muted">Todavía no hay información tuya publicada. Avisale a RRHH.</p><button class="btn sec" onclick="salir()">Salir</button></div>`; return; }
     mostrar(S.vista || 'inicio', toast);
@@ -238,7 +248,7 @@ function pie(){
 }
 function mostrar(v, toast){
   S.vista = v; window.scrollTo(0,0); marcaDeAgua();
-  const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, clave:()=>pantallaClave(false) };
+  const V = { inicio:vInicio, vacaciones:vVacaciones, pedirVac:vPedirVac, pedidos:vPedidos, datos:vDatos, pedirDatos:vPedirDatos, prestamos:vPrestamos, tramites:vTramites, sugerencias:vSugerencias, sugerir:vSugerir, clave:()=>pantallaClave(false) };
   (V[v] || vInicio)();
   if(toast){ const t = document.createElement('div'); t.className = 'card'; t.style.cssText = 'border-color:var(--good);color:var(--good);font-size:14.5px'; t.textContent = toast;
     const w = $('#app'); const h = w.querySelector('.head, .back'); if(h && h.nextSibling) w.insertBefore(t, h.nextSibling); else w.prepend(t); setTimeout(()=>t.remove(), 6000); }
@@ -262,6 +272,7 @@ function vInicio(){
       <button class="tile" onclick="mostrar('pedidos')"><div class="ico">📨</div><div><div class="t">Mis pedidos</div><div class="s">${pend?`${pend} pendiente(s)`:'Sin pendientes'}${resp?` · ${resp} respuesta(s) nueva(s)`:''}</div></div></button>
       <button class="tile" onclick="mostrar('tramites')"><div class="ico">📝</div><div><div class="t">Trámites</div><div class="s">Constancias, avisar una ausencia, consultas</div></div></button>
       <button class="tile" onclick="mostrar('datos')"><div class="ico">👤</div><div><div class="t">Mis datos</div><div class="s">Ver y pedir cambios</div></div></button>
+      ${S.sugOk!==false ? `<button class="tile sug" onclick="mostrar('sugerencias')"><div class="ico" style="font-size:28px">💡</div><div><div class="t">Buzón de sugerencias</div><div class="s">${sugNuevas()?`<b style="color:var(--yellow)">${sugNuevas()} respuesta(s) nueva(s)</b>`:'Ideas para trabajar mejor, más rápido y con menos desperdicio'}</div></div></button>` : ''}
       ${(e.prestamos||[]).length ? `<button class="tile" onclick="mostrar('prestamos')"><div class="ico">💵</div><div><div class="t">Préstamos</div><div class="s">${pr.length?`Saldo ${money(pr.reduce((t,p)=>t+p.saldo,0))}`:'Sin saldo pendiente'}</div></div></button>` : ''}
     </div>` + (recibosUrl() && S.cfg.recibosTexto ? `<div class="info">🧾 ${esc(S.cfg.recibosTexto)}</div>` : '') + pie();
 }
@@ -345,11 +356,13 @@ function vPedidos(){
   $('#app').innerHTML = volver() + `<h2>Mis pedidos</h2><div class="card">${L.length ? L.map(p=>`
     <div class="ped"><div class="top"><b>${esc(TIPOS[p.tipo]||p.tipo)}</b><span class="est ${p.estado}">${esc(ESTADOS[p.estado]||p.estado)}</span></div>
       <div class="small" style="margin-top:4px">${detallePedido(p)}</div>
-      <div class="muted small" style="margin-top:2px">Enviado el ${esc(fmtFH(p.creado))}</div>
+      <div class="muted small" style="margin-top:2px">Enviado el ${esc(fmtFH(p.creado))}</div>${adjuntosHtml(p)}
       ${p.resuelto && (p.resuelto.nota || p.estado!=='pendiente') ? `<div class="resp"><b>RRHH${p.resuelto.por?' ('+esc(nomTitulo(p.resuelto.por))+')':''}:</b> ${esc(p.resuelto.nota || ESTADOS[p.estado])}<div class="muted small">${esc(fmtFH(p.resuelto.fecha))}</div></div>` : ''}
       ${p.estado==='pendiente' ? `<button class="btn link" style="width:auto;padding-left:0" data-cancel="${esc(p.id)}">Cancelar este pedido</button>` : ''}
     </div>`).join('') : '<p class="muted" style="margin:0">Todavía no hiciste ningún pedido.</p>'}</div>
+    <div class="info">Tu jefe y RRHH reciben un aviso con cada pedido y con cada cambio (certificado, cancelación).</div>
     <button class="btn sec" onclick="mostrar('tramites')">Hacer un pedido nuevo</button>` + pie();
+  bindAdjuntos();
   document.querySelectorAll('[data-cancel]').forEach(b=>b.onclick = async ()=>{
     if(!confirm('¿Cancelar este pedido?')) return;
     try{ const r = await rpc('rrhh_emp_cancelar', { p_token:S.token, p_id:b.dataset.cancel }); await recargar(r.ok ? 'Pedido cancelado.' : 'Ese pedido ya no se puede cancelar (RRHH ya lo resolvió).'); }catch(e){ alert(msgError(e)); }
@@ -406,14 +419,17 @@ function vTramites(){
     constancia: `<label class="f" for="tQue">¿Qué necesitás?</label><select id="tQue"><option>Certificado de trabajo y servicios</option><option>Certificado de vacaciones</option></select>
       <label class="f" for="tPara">¿Para presentar dónde? (opcional)</label><input id="tPara" maxlength="120" placeholder="Ej.: banco, escuela, ANSES, alquiler">
       <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
-    ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Esto <b>no reemplaza el certificado</b>: entregalo en RRHH.</p>
+    ausencia: `<p class="small muted" style="margin-top:0">Avisá si vas a faltar o faltaste. Le llega a <b>tu jefe</b> y a <b>RRHH</b>. Si tenés el certificado, adjuntalo; si no, lo podés agregar después desde <b>Mis pedidos</b>.</p>
       <label class="f" for="tDesde">Desde</label><input type="date" id="tDesde" value="${isoDe(new Date())}"><label class="f" for="tHasta">Hasta</label><input type="date" id="tHasta" value="${isoDe(new Date())}">
       <label class="f" for="tMot">Motivo</label><select id="tMot"><option>Enfermedad</option><option>Familiar enfermo</option><option>Turno médico</option><option>Examen / estudio</option><option>Trámite personal</option><option>Fallecimiento de familiar</option><option>Nacimiento</option><option>Otro</option></select>
-      <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>`,
+      <label class="f" for="tObs">Comentario (opcional)</label><textarea id="tObs" maxlength="300"></textarea>
+      <label class="f">Certificado (opcional)</label>
+      <label class="btn sec" for="tAdj" style="margin-top:0;cursor:pointer">📎 Adjuntar foto o PDF</label><input type="file" id="tAdj" accept="image/*,application/pdf" class="hide">
+      <div id="tAdjPrev"></div>`,
     consulta: `<label class="f" for="tTexto">Tu consulta para RRHH</label><textarea id="tTexto" maxlength="800" placeholder="Escribí tu consulta (sueldo, horas, licencias, ropa de trabajo, etc.)"></textarea>`
   };
   let tipo = 'constancia';
-  const pint = ()=>{ $('#tForm').innerHTML = forms[tipo] + `<button class="btn" id="tEnviar">Enviar a RRHH</button><div class="err" id="tErr"></div>`; $('#tEnviar').onclick = enviar; };
+  const pint = ()=>{ $('#tForm').innerHTML = forms[tipo] + `<button class="btn" id="tEnviar">Enviar a RRHH</button><div class="err" id="tErr"></div>`; $('#tEnviar').onclick = enviar; if(tipo==='ausencia') prepararAdjAusencia(); };
   document.querySelectorAll('#tSeg button').forEach(b=>b.onclick = ()=>{ tipo = b.dataset.t; document.querySelectorAll('#tSeg button').forEach(x=>x.classList.toggle('on', x===b)); pint(); });
   async function enviar(){
     let datos;
@@ -423,10 +439,165 @@ function vTramites(){
     $('#tEnviar').disabled = true;
     try{ const r = await rpc('rrhh_emp_pedir', { p_token:S.token, p_tipo:tipo, p_datos:datos });
       if(!r.ok){ $('#tErr').textContent = ({ fechas:'Revisá las fechas.', demasiados:'Tenés muchos pedidos pendientes. Esperá la respuesta de RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
-      S.vista = 'pedidos'; await recargar('Enviado. La respuesta de RRHH aparece en Mis pedidos.');
+      if(tipo==='ausencia' && S.adjAus && r.pedido){ try{ await subirAdjunto(r.pedido.id, S.adjAus); S.adjAus = null; }
+        catch(e){ S.adjAus = null; S.vista = 'pedidos'; await recargar('El aviso se envió, pero el certificado no se pudo subir. Adjuntalo de nuevo desde acá.'); return; } }
+      S.vista = 'pedidos'; await recargar(tipo==='ausencia' ? 'Aviso enviado. Ya les llegó a tu jefe y a RRHH.' : 'Enviado. La respuesta de RRHH aparece en Mis pedidos.');
     }catch(e){ $('#tErr').textContent = msgError(e); } finally{ const b = $('#tEnviar'); if(b) b.disabled = false; }
   }
   pint();
+}
+
+// ---------- BUZÓN DE SUGERENCIAS (las gestiona el jefe de producción) ----------
+const SUG_CATS = {
+  tiempos:     { ico:'⏱️', t:'Tiempos y productividad', s:'Esperas, pasos de más, cuellos de botella, reprocesos' },
+  calidad:     { ico:'✅', t:'Calidad', s:'Fallas que se repiten, piezas que vuelven, controles' },
+  ahorro:      { ico:'♻️', t:'Ahorro de materiales', s:'Scrap, pintura, insumos, energía' },
+  maquinas:    { ico:'🔧', t:'Máquinas y herramientas', s:'Mantenimiento, ajustes, matrices, herramental que falta' },
+  orden:       { ico:'🗂️', t:'Orden y puesto de trabajo', s:'Dónde están las cosas, layout, limpieza' },
+  logistica:   { ico:'🚚', t:'Logística interna y expedición', s:'Abastecer la línea, movimientos, stock, despacho' },
+  seguridad:   { ico:'🦺', t:'Seguridad', s:'Riesgos, condiciones inseguras, elementos de protección' },
+  coordinacion:{ ico:'🔄', t:'Coordinación y planificación', s:'Info que llega tarde, cambios de orden, entre sectores' },
+  otros:       { ico:'💬', t:'Otros', s:'Cualquier otra idea para trabajar mejor' },
+};
+const SUG_GANA = { tiempo:'⏱ Ahorra tiempo', costo:'💲 Ahorra material o plata', calidad:'✅ Mejora la calidad', seguridad:'🦺 Más seguro', orden:'🙌 Más cómodo u ordenado' };
+const SUG_AREAS = ['Armado','Fabricación','Pintura','Expedición','Depósito','Mantenimiento','Matricería','Chofer / reparto','Oficina','Toda la planta'];
+const SUG_EST = { recibida:['Recibida','pendiente'], analisis:['En análisis','pendiente'], aprobada:['Aprobada: se va a hacer','aprobada'], implementada:['Implementada','aprobada'], descartada:['No se hace por ahora','rechazada'] };
+const sugs = () => (S.sug || []);
+const sugNuevas = () => sugs().filter(x=>x.respuesta && x.respuesta.fecha && (Date.now()-Date.parse(x.respuesta.fecha)) < 7*864e5).length;
+async function cargarSugerencias(){
+  try{ const r = await rpc('rrhh_emp_mis_sugerencias', { p_token:S.token }); S.sug = (r && r.sugerencias) || []; S.sugOk = true; }
+  catch(e){ if(e.message==='sin_funciones') S.sugOk = false; }
+}
+function vSugerencias(){
+  const L = sugs();
+  const fila = x => { const c = SUG_CATS[x.datos && x.datos.cat] || {}, e = SUG_EST[x.estado] || [x.estado,''];
+    return `<div class="ped"><div class="top"><b>${c.ico||'💡'} ${esc(c.t||'Sugerencia')}${x.num?` <span class="muted small mono">#${esc(x.num)}</span>`:''}</b><span class="est ${e[1]}">${esc(e[0])}</span></div>
+      <div class="small" style="margin-top:6px"><span class="muted">Hoy:</span> ${esc(x.datos.hoy)}</div>
+      <div class="small" style="margin-top:4px"><span class="muted">Propuse:</span> ${esc(x.datos.propuesta)}</div>
+      <div class="muted small" style="margin-top:4px">${esc(x.datos.area||'')} · enviada el ${esc(fmtFH(x.creado))}${x.foto?' · 📷 con foto':''}</div>
+      ${x.respuesta ? `<div class="resp"><b>Jefe de producción${x.respuesta.por?' ('+esc(nomTitulo(x.respuesta.por))+')':''}:</b> ${esc(x.respuesta.texto)}<div class="muted small">${esc(fmtFH(x.respuesta.fecha))}</div></div>` : ''}
+    </div>`; };
+  const impl = L.filter(x=>x.estado==='implementada').length;
+  $('#app').innerHTML = volver() + `<h2>Buzón de sugerencias</h2>
+    <div class="card top"><p class="small" style="margin-top:0;line-height:1.5">¿Ves algo que se podría hacer mejor, más rápido o con menos desperdicio? Contalo acá. Lo recibe el <b>jefe de producción</b>, que la analiza y te responde por este mismo lugar.</p>
+      <button class="btn" onclick="mostrar('sugerir')">💡 Hacer una sugerencia</button>
+      ${S.sugOk===false ? '<div class="warn">El buzón todavía no está habilitado. Avisale a RRHH.</div>' : ''}</div>
+    ${L.length ? `<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${L.length}</b><span>enviadas</span></div><div class="stat"><b>${L.filter(x=>x.estado==='aprobada'||x.estado==='analisis').length}</b><span>en curso</span></div><div class="stat hl"><b>${impl}</b><span>implementadas</span></div></div>` : ''}
+    <h3>Mis sugerencias</h3><div class="card">${L.length ? L.map(fila).join('') : '<p class="muted small" style="margin:0">Todavía no mandaste ninguna.</p>'}</div>` + pie();
+}
+function achicarFoto(file){
+  return new Promise((ok, mal)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=>mal(new Error('foto'));
+    fr.onload = ()=>{ const im = new Image(); im.onerror = ()=>mal(new Error('foto'));
+      im.onload = ()=>{ const M = 1280, k = Math.min(1, M/Math.max(im.width, im.height)); const c = document.createElement('canvas');
+        c.width = Math.round(im.width*k); c.height = Math.round(im.height*k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        let q = .72, url = c.toDataURL('image/jpeg', q); while(url.length > 850000 && q > .3){ q -= .12; url = c.toDataURL('image/jpeg', q); } ok(url); };
+      im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+function vSugerir(){
+  const e = E(), sec = String(e.sector||'').toUpperCase();
+  const def = SUG_AREAS.find(a=>a.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').startsWith(sec.normalize('NFD').replace(/[̀-ͯ]/g,'').slice(0,5))) || '';
+  let cat = '', foto = null; const gana = new Set();
+  $('#app').innerHTML = volver('sugerencias') + `<h2>Hacer una sugerencia</h2>
+    <div class="card top">
+      <label class="f paso"><span class="pn">1</span>¿De qué se trata?</label>
+      <div class="sugcats">${Object.entries(SUG_CATS).map(([k,c])=>`<button type="button" class="sugcat" data-cat="${k}"><span class="ico">${c.ico}</span><b>${esc(c.t)}</b><span>${esc(c.s)}</span></button>`).join('')}</div>
+      <label class="f paso" for="sArea"><span class="pn">2</span>¿Dónde?</label>
+      <select id="sArea"><option value="">Elegí el sector</option>${SUG_AREAS.map(a=>`<option ${a===def?'selected':''}>${esc(a)}</option>`).join('')}</select>
+      <label class="f paso" for="sHoy"><span class="pn">3</span>¿Qué pasa hoy?</label>
+      <textarea id="sHoy" maxlength="1200" placeholder="Ej.: para pintar la pieza X la tenemos que dar vuelta dos veces y se pierden 10 minutos por tanda"></textarea>
+      <label class="f paso" for="sProp"><span class="pn">4</span>¿Qué proponés?</label>
+      <textarea id="sProp" maxlength="1200" placeholder="Ej.: un soporte giratorio en la cabina 2"></textarea>
+      <label class="f paso"><span class="pn">5</span>¿Qué se gana? <small>(podés marcar varias)</small></label>
+      <div class="seg" id="sGana">${Object.entries(SUG_GANA).map(([k,t])=>`<button type="button" data-g="${k}">${esc(t)}</button>`).join('')}</div>
+      <label class="f paso"><span class="pn">6</span>Foto <small>(opcional)</small></label>
+      <label class="btn sec" style="margin-top:0;cursor:pointer" for="sFoto">📷 Sacar o elegir una foto</label>
+      <input type="file" id="sFoto" accept="image/*" capture="environment" class="hide">
+      <div id="sFotoPrev"></div>
+      <button class="btn" id="sEnviar">Enviar sugerencia</button>
+      <div class="err" id="sErr"></div>
+      <div class="info">Va con tu nombre (${esc(nomTitulo(e.nombre))}, legajo ${esc(e.legajo)}) al jefe de producción. La respuesta la ves en <b>Buzón de sugerencias</b>.</div>
+    </div>`;
+  $('#app').addEventListener('input', ()=>{ const x = $('#sErr'); if(x) x.textContent = ''; });
+  document.querySelectorAll('.sugcat').forEach(b=>b.onclick = ()=>{ cat = b.dataset.cat; $('#sErr').textContent = ''; document.querySelectorAll('.sugcat').forEach(x=>x.classList.toggle('on', x===b)); });
+  document.querySelectorAll('#sGana button').forEach(b=>b.onclick = ()=>{ const k = b.dataset.g; gana.has(k) ? gana.delete(k) : gana.add(k); b.classList.toggle('on', gana.has(k)); });
+  $('#sFoto').onchange = async ev=>{ const f = ev.target.files && ev.target.files[0]; if(!f) return;
+    $('#sFotoPrev').innerHTML = '<div class="info">Preparando la foto…</div>';
+    try{ foto = await achicarFoto(f); $('#sFotoPrev').innerHTML = `<div style="position:relative;margin-top:10px"><img src="${foto}" alt="Foto adjunta" style="width:100%;border-radius:10px;display:block"><button type="button" class="btn danger" id="sFotoX" style="margin-top:6px">Quitar la foto</button></div>`;
+      $('#sFotoX').onclick = ()=>{ foto = null; $('#sFoto').value = ''; $('#sFotoPrev').innerHTML = ''; }; }
+    catch(e){ foto = null; $('#sFotoPrev').innerHTML = '<div class="warn">No se pudo leer la foto. Probá con otra.</div>'; } };
+  $('#sEnviar').onclick = async ()=>{
+    const area = $('#sArea').value, hoy = $('#sHoy').value.trim(), prop = $('#sProp').value.trim();
+    const err = !cat ? 'Elegí de qué se trata (punto 1).' : !area ? 'Elegí el sector (punto 2).' : hoy.length < 10 ? 'Contá un poco más qué pasa hoy (punto 3).' : prop.length < 10 ? 'Contá un poco más qué proponés (punto 4).' : '';
+    if(err){ $('#sErr').textContent = err; return; }
+    $('#sEnviar').disabled = true; $('#sErr').textContent = '';
+    try{
+      const r = await rpc('rrhh_emp_sugerir', { p_token:S.token, p_datos:{ cat, area, hoy, propuesta:prop, gana:[...gana] }, p_foto:foto });
+      if(!r.ok){ $('#sErr').textContent = ({ demasiadas:'Ya mandaste 5 sugerencias hoy. Mandá la próxima mañana.', corta:'Contá un poco más qué pasa y qué proponés.', foto:'La foto es muy pesada. Probá con otra.', sin_publicar:'Todavía no hay datos tuyos publicados. Avisale a RRHH.' })[r.error] || 'No se pudo enviar.'; return; }
+      S.vista = 'sugerencias'; await recargar('¡Gracias! Tu sugerencia le llegó al jefe de producción.');
+    }catch(e){ $('#sErr').textContent = msgError(e); }
+    finally{ const b = $('#sEnviar'); if(b) b.disabled = false; }
+  };
+}
+
+// ---------- CERTIFICADOS en avisos de ausencia (foto o PDF; le llegan al jefe y a RRHH) ----------
+const ADJ_MAX_PDF = 2 * 1024 * 1024;
+function leerArchivoAdj(file){
+  return new Promise((ok, mal)=>{
+    if(!file) return mal(new Error('archivo'));
+    const esPdf = file.type==='application/pdf' || /\.pdf$/i.test(file.name||'');
+    const fr = new FileReader(); fr.onerror = ()=>mal(new Error('archivo'));
+    if(esPdf){
+      if(file.size > ADJ_MAX_PDF) return mal(new Error('pesado'));
+      fr.onload = ()=>ok({ data:String(fr.result).replace(/^data:[^;]*;/, 'data:application/pdf;'), nombre:file.name||'certificado.pdf', pdf:true });
+      return fr.readAsDataURL(file);
+    }
+    if(!/^image\//.test(file.type||'')) return mal(new Error('tipo'));
+    fr.onload = ()=>{ const im = new Image(); im.onerror = ()=>mal(new Error('archivo'));
+      im.onload = ()=>{ const M = 1600, k = Math.min(1, M/Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width*k); c.height = Math.round(im.height*k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        let q = .8, url = c.toDataURL('image/jpeg', q); while(url.length > 1500000 && q > .3){ q -= .1; url = c.toDataURL('image/jpeg', q); }
+        ok({ data:url, nombre:(file.name||'certificado').replace(/\.[^.]+$/, '') + '.jpg', pdf:false }); };
+      im.src = fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+const adjError = e => ({ pesado:'El PDF pesa más de 2 MB. Sacale una foto al certificado en lugar del PDF.', tipo:'Solo se pueden adjuntar fotos o PDF.' }[e && e.message] || 'No se pudo leer el archivo. Probá con otro.');
+async function subirAdjunto(idPedido, a){
+  const r = await rpc('rrhh_emp_adjuntar', { p_token:S.token, p_id:idPedido, p_archivo:a.data, p_nombre:a.nombre });
+  if(!r.ok) throw new Error(({ cancelada:'Ese pedido está cancelado.', demasiados:'Ya tiene 5 archivos adjuntos.', archivo:'El archivo no es válido o es muy pesado.' })[r.error] || 'No se pudo adjuntar.');
+  return r;
+}
+function adjuntosHtml(p){
+  if(p.tipo!=='ausencia') return '';
+  const L = p.adjuntos || [];
+  return (L.length ? `<div class="small" style="margin-top:6px">${L.map(a=>`<div>📎 ${esc(a.nombre)} <span class="muted">· ${esc(fmtFH(a.fecha))}</span></div>`).join('')}</div>`
+                   : (p.estado!=='cancelada' ? '<div class="small" style="margin-top:6px;color:var(--warn)">Sin certificado adjunto</div>' : ''))
+    + (p.estado!=='cancelada' && L.length < 5 ? `<button class="btn sec" style="margin-top:8px;padding:11px" data-adj="${esc(p.id)}">📎 ${L.length?'Adjuntar otro archivo':'Adjuntar certificado'}</button>` : '');
+}
+function bindAdjuntos(){
+  document.querySelectorAll('[data-adj]').forEach(b=>b.onclick = ()=>{
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*,application/pdf';
+    inp.onchange = async ()=>{ const f = inp.files && inp.files[0]; if(!f) return;
+      b.disabled = true; const t0 = b.textContent; b.textContent = 'Subiendo…';
+      try{ const a = await leerArchivoAdj(f); await subirAdjunto(b.dataset.adj, a); await recargar('Certificado adjuntado. Ya les llegó a tu jefe y a RRHH.'); }
+      catch(e){ alert(e.message && !/^(archivo|pesado|tipo)$/.test(e.message) ? (e.message==='conexion'||e.message==='sesion'?msgError(e):e.message) : adjError(e)); b.disabled = false; b.textContent = t0; }
+    };
+    inp.click();
+  });
+}
+function prepararAdjAusencia(){
+  const i = document.getElementById('tAdj'); if(!i) return;
+  S.adjAus = null;
+  i.onchange = async ()=>{ const f = i.files && i.files[0], pv = document.getElementById('tAdjPrev'); S.adjAus = null; if(!f){ pv.innerHTML = ''; return; }
+    pv.innerHTML = '<div class="info">Preparando el archivo…</div>';
+    try{ S.adjAus = await leerArchivoAdj(f);
+      pv.innerHTML = `<div class="info" style="display:flex;justify-content:space-between;align-items:center;gap:8px">${S.adjAus.pdf?'📄':'🖼️'} ${esc(S.adjAus.nombre)}<button type="button" class="btn link" style="width:auto;margin:0;padding:4px" id="tAdjX">Quitar</button></div>`;
+      document.getElementById('tAdjX').onclick = ()=>{ S.adjAus = null; i.value = ''; pv.innerHTML = ''; }; }
+    catch(e){ i.value = ''; pv.innerHTML = `<div class="warn">${esc(adjError(e))}</div>`; } };
 }
 
 // ---- protección de datos en pantalla ----

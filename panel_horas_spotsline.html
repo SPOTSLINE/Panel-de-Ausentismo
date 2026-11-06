@@ -484,6 +484,7 @@
   #userChip{margin-top:6px; display:flex; gap:8px; align-items:center; justify-content:flex-end; font-size:12px;}
   .user-chip-name{color:var(--text);}
   .usr-box{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:12px; padding:12px 14px; background:var(--panel); border:1px solid var(--line); border-radius:8px;}
+  .adj-link{color:var(--amber); text-decoration:underline;} .adj-link:hover{color:var(--text);}
   .usr-aviso{font-size:12px; line-height:1.5; padding:9px 12px; border-radius:6px; margin-bottom:12px; color:#f0c27a; background:rgba(245,196,0,.08); border:1px solid rgba(245,196,0,.35);}
   .usr-aviso.info{color:var(--muted); background:var(--panel); border-color:var(--line);}
   .usr-toast{position:fixed; right:24px; bottom:24px; background:var(--good-dim); color:var(--good); border:1px solid var(--good); border-radius:8px; padding:10px 16px; font-size:13px; z-index:60;}
@@ -946,6 +947,7 @@
   <div class="kpis" id="kpiRow"></div>
 
   <div class="usr-aviso" id="avisoJefe" style="display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0; border-color:var(--danger);"></div>
+  <div class="usr-aviso" id="avisoNov" style="display:none; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:10px 0; border-color:var(--danger);"></div>
   <section id="tab-detalle" class="tabpanel">
     <div id="printFlexHead">
       <div class="print-header" style="display:none">
@@ -4506,6 +4508,7 @@ async function boot(){
   activarPrimeraTabPermitida();
   renderTabsNuevas();
   iniciarAvisosJefe();
+  iniciarNovedades();
 }
 
 // ====== pestaña Usuarios (solo administrador) ======
@@ -5743,6 +5746,87 @@ function iniciarAvisosJefe(){
   revisarAvisosJefe();
   if(!_avisoTimer) _avisoTimer = setInterval(revisarAvisosJefe, 5*60*1000);
   if(location.hash==='#autorizar'){ setTimeout(irAAutorizar, 800); try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} }
+}
+
+// ---- NOVEDADES PARA EL JEFE: todo lo que pasa con los pedidos de su gente (portal del empleado) ----
+// Cada pedido nuevo, certificado adjuntado, cancelación o respuesta de RRHH es una novedad para el jefe directo
+// (organigrama) y para los administradores (ven todo). Lo calcula Supabase: rrhh_mis_novedades (novedades_jefes.sql).
+// Cartel arriba + ventana con la lista; "Marcar como visto" es por usuario. Abrir el panel con #novedades va directo.
+const NOV = { r:null, timer:null, ver:'nuevas' };
+async function novRpc(fn, args){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method:'POST', headers:{ apikey:SUPABASE_KEY, Authorization:`Bearer ${SUPABASE_KEY}`, 'Content-Type':'application/json' }, body:JSON.stringify(args||{}) });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+async function revisarNovedades(){
+  try{ NOV.r = await novRpc('rrhh_mis_novedades', { p_dias:45 }); }catch(e){ NOV.r = null; }
+  pintarAvisoNov();
+  if(document.getElementById('overlayRH').classList.contains('open') && document.getElementById('novLista')) pintarListaNov();
+}
+function pintarAvisoNov(){
+  const el = document.getElementById('avisoNov'); if(!el) return;
+  const r = NOV.r, n = r && r.n || 0;
+  if(!r || !n){ el.style.display = 'none'; el.innerHTML = ''; return; }
+  const nuevas = r.items.filter(x=>x.nuevo), nombres = [...new Set(nuevas.map(x=>orgCorto(x.nombre||'')))];
+  el.innerHTML = `<span>📨 <b>${n} novedad${n===1?'':'es'} ${r.admin && !r.jefe ? 'de pedidos del portal' : 'de tu gente'}</b> — ${escHtml(nombres.slice(0,6).join(', '))}${nombres.length>6?'…':''}</span><button class="btn small" id="avisoNovVer">Ver novedades</button>`;
+  el.style.display = 'flex';
+  document.getElementById('avisoNovVer').onclick = abrirNovedades;
+}
+function novDetalle(p){
+  const d = p.datos || {};
+  if(p.tipo==='vacaciones' || p.tipo==='ausencia') return `Del <b>${rhFecha(d.desde)}</b> al <b>${rhFecha(d.hasta)}</b>${d.dias?` · ${escHtml(d.dias)} días`:''}${d.motivo?` · motivo: <b>${escHtml(d.motivo)}</b>`:''}${d.obs?`<br>“${escHtml(d.obs)}”`:''}`;
+  if(p.tipo==='datos') return 'Pide cambiar: ' + Object.keys(d.campos||{}).map(k=>escHtml((typeof DATOS_CAMPOS!=='undefined' && DATOS_CAMPOS[k]) || k)).join(', ');
+  if(p.tipo==='constancia') return `Pide: <b>${escHtml(d.que||'Constancia')}</b>${d.para?` · para ${escHtml(d.para)}`:''}`;
+  return `“${escHtml(d.texto||d.obs||'')}”`;
+}
+function adjLinks(p){
+  const L = p.adjuntos || [];
+  if(p.tipo!=='ausencia') return '';
+  return L.length ? `<div style="margin-top:4px">${L.map(a=>`<a href="#" class="adj-link" data-adjver="${escHtml(a.id)}">📎 ${escHtml(a.nombre)}</a> <span class="muted" style="font-size:11px">${rhFechaHora(a.fecha)}</span>`).join('<br>')}</div>`
+                  : (p.estado!=='cancelada' ? '<div class="muted" style="margin-top:4px">Sin certificado adjunto todavía.</div>' : '');
+}
+async function verAdjunto(id){
+  const w = window.open('', '_blank');
+  try{
+    const a = await novRpc('rrhh_adjunto', { p_id:id });
+    if(!a || !a.data){ if(w) w.close(); alert('No se encontró el archivo.'); return; }
+    const bin = atob(a.data.split(',')[1]), u = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([u], { type:a.tipo || 'application/octet-stream' }));
+    if(w) w.location = url; else location.href = url;
+  }catch(e){ if(w) w.close(); alert('No se pudo abrir el certificado (puede que tu usuario no tenga permiso).'); }
+}
+document.addEventListener('click', e=>{ const a = e.target.closest && e.target.closest('[data-adjver]'); if(a){ e.preventDefault(); verAdjunto(a.dataset.adjver); } });
+function abrirNovedades(){
+  rhModal('Novedades de los pedidos del portal', '<div id="novLista"><div class="empty-hint" style="padding:16px">Cargando…</div></div>');
+  document.getElementById('rhModalCerrar').onclick = rhCerrarModal;
+  pintarListaNov(); revisarNovedades();
+}
+function pintarListaNov(){
+  const box = document.getElementById('novLista'); if(!box) return;
+  const r = NOV.r;
+  if(!r){ box.innerHTML = '<div class="usr-aviso">No se pudieron leer las novedades. Revisá la conexión (o falta instalar novedades_jefes.sql).</div>'; return; }
+  if(!r.admin && !r.jefe){ box.innerHTML = '<div class="empty-hint" style="padding:16px">Tu usuario no figura como jefe en el organigrama (Personal → Organigrama → Configurar jefes).</div>'; return; }
+  const L = NOV.ver==='nuevas' ? r.items.filter(x=>x.nuevo) : r.items;
+  box.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="display:flex;gap:2px;border-bottom:1px solid var(--border,#333)"><button class="sub-btn ${NOV.ver==='nuevas'?'active':''}" data-nver="nuevas">Sin ver (${r.n})</button><button class="sub-btn ${NOV.ver==='todas'?'active':''}" data-nver="todas">Últimos 45 días (${r.items.length})</button></div>
+      ${r.n ? '<button class="btn secondary small" id="novTodas">Marcar todo como visto</button>' : ''}</div>
+    <div class="note" style="margin-bottom:8px">${r.admin ? 'Como administrador/a ves los pedidos de todos.' : 'Ves los pedidos de las personas a tu cargo directo.'} Cada pedido nuevo, certificado, cancelación o respuesta de RRHH aparece acá.</div>
+    ${L.length ? L.map(p=>`<div class="ped ${p.nuevo?'':'cerrado'}" style="${p.nuevo?'border-left:3px solid var(--danger)':''}">
+      <div class="ped-head"><span><b>${escHtml(p.nombre||p.pid)}</b> <span class="muted mono">leg. ${escHtml(p.legajo==null?'':p.legajo)} · ${escHtml(p.sector||'')}</span></span>
+        <span><span class="tag">${escHtml(TIPOS_PEDIDO[p.tipo]||p.tipo)}</span> <span class="est ${escHtml(p.estado)}">${escHtml(ESTADOS_PEDIDO[p.estado]||p.estado)}</span></span></div>
+      <div class="ped-body"><b>${p.nuevo?'🔴 ':''}${escHtml(p.evento)}</b> <span class="muted mono" style="font-size:11px">${rhFechaHora(p.cambio)}</span><br>${novDetalle(p)}${adjLinks(p)}
+        ${p.resuelto?`<div class="muted" style="margin-top:4px">RRHH (${escHtml(p.resuelto.por||'')}): ${escHtml(p.resuelto.nota||ESTADOS_PEDIDO[p.estado]||'')}</div>`:''}</div>
+      ${p.nuevo ? `<div class="ped-acc"><button class="btn secondary small" data-novvisto="${escHtml(p.id)}">Marcar como visto</button></div>` : ''}</div>`).join('')
+      : `<div class="empty-hint" style="padding:16px">${NOV.ver==='nuevas' ? 'No tenés novedades sin ver. 👍' : 'No hubo movimientos en los últimos 45 días.'}</div>`}`;
+  box.querySelectorAll('[data-nver]').forEach(b=>b.onclick = ()=>{ NOV.ver = b.dataset.nver; pintarListaNov(); });
+  const marcar = async ids=>{ try{ await novRpc('rrhh_novedades_visto', { p_ids:ids }); }catch(e){ alert('No se pudo marcar. Probá de nuevo.'); return; } await revisarNovedades(); };
+  box.querySelectorAll('[data-novvisto]').forEach(b=>b.onclick = ()=>marcar([b.dataset.novvisto]));
+  const t = document.getElementById('novTodas'); if(t) t.onclick = ()=>marcar(r.items.filter(x=>x.nuevo).map(x=>x.id));
+}
+function iniciarNovedades(){
+  revisarNovedades();
+  if(!NOV.timer) NOV.timer = setInterval(()=>{ if(!document.hidden) revisarNovedades(); }, 3*60*1000);
+  if(location.hash==='#novedades'){ setTimeout(abrirNovedades, 800); try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} }
 }
 
 // ---- ficha de la persona (todo lo que hay de ella en un solo lugar) ----
@@ -8701,7 +8785,7 @@ const PortalRRHH = (function(){
       const camp = d.campos || {};
       return `<table style="margin:4px 0"><tr><th>Dato</th><th>Actual</th><th>Pide cambiar a</th></tr>${Object.keys(camp).map(k=>`<tr><td>${escHtml(DATOS_CAMPOS[k]||k)}</td><td class="cambio-old">${escHtml(act[k]||'—')}</td><td class="cambio-new">${escHtml(camp[k])}</td></tr>`).join('')}</table>${d.obs?`Comentario: “${escHtml(d.obs)}”`:''}`;
     }
-    if(p.tipo==='ausencia') return `Del <b>${rhFecha(d.desde)}</b> al <b>${rhFecha(d.hasta)}</b> · motivo: <b>${escHtml(d.motivo||'')}</b>${d.obs?`<br>“${escHtml(d.obs)}”`:''}<br><span class="muted">Es un aviso: la novedad se carga como siempre en la grilla cuando llega el certificado o la fichada.</span>`;
+    if(p.tipo==='ausencia') return `Del <b>${rhFecha(d.desde)}</b> al <b>${rhFecha(d.hasta)}</b> · motivo: <b>${escHtml(d.motivo||'')}</b>${d.obs?`<br>“${escHtml(d.obs)}”`:''}${adjLinks(p)}<br><span class="muted">Es un aviso: la novedad se carga como siempre en la grilla cuando llega el certificado o la fichada.</span>`;
     if(p.tipo==='constancia') return `Pide: <b>${escHtml(d.que||'Constancia')}</b>${d.para?` · para presentar en: ${escHtml(d.para)}`:''}${d.obs?`<br>“${escHtml(d.obs)}”`:''}`;
     return `“${escHtml(d.texto||d.obs||'')}”`;
   }
